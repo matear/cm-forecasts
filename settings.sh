@@ -47,10 +47,14 @@ EXECNAME=fms_CM2M.x
 SYSTEMNAME=CAFE
 
 #=======================================================================
-# Restart file parameters
+# Restart file locations on pearcey
 JULDAY=`$date2dn $this_date $JULBASE`
-#RESTART_ARCHIVE_DIR="/OSM/CBR/OA_DCFP/data3/model_output/CAFE/data_assimilation/CAFE60/short/v14/tok599/cm-runs/CAFE-60/save/RESTART_"${JULDAY}
-RESTART_ARCHIVE_DIR="/OSM/CBR/OA_DCFP/data5/model_output/CAFE/data_assimilation/CAFE60/short/v14/tok599/cm-runs/CAFE-60/save/RESTART_"${JULDAY}
+if (( JULDAY > 73991 )) ; then
+	RESTART_ARCHIVE_DIR="/OSM/CBR/OA_DCFP/data3/model_output/CAFE/data_assimilation/CAFE60/scratch/v14/tok599/cm-runs/CAFE-60/save/RESTART_"${JULDAY}
+else
+	RESTART_ARCHIVE_DIR="/OSM/CBR/OA_DCFP/data5/model_output/CAFE/data_assimilation/CAFE60/short/v14/tok599/cm-runs/CAFE-60/save/RESTART_"${JULDAY}
+fi
+
 INITENSDIR=$INITENSDIR_BASE"/RESTART_"${JULDAY}
 if [ ! -d "${INITENSDIR}" ] ; then
 	echo ""

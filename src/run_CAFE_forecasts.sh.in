@@ -1,0 +1,347 @@
+#!/bin/bash
+
+#####################################################################
+# File: run_CAFE_forecasts.sh.in
+# Author: Paul Sandery adapted from Pavel Sakov
+# Created: 2018
+# Purpose: input for BASH script for running EnKF with CM21 on raijin
+# Description: the launching script lauch.sh converts this script into run_CAFE_forecasts.sh using settings from settings.sh and local.sh.
+# Dependencies: depends on a number of other scripts including run_mom.sh.in.
+#####################################################################
+
+umask 027
+set -xeuEo pipefail
+function traperr
+{
+	echo "  ERROR TRAPPED at line $1"
+	kill 0 # kill the master shell and all subshells
+}
+trap 'traperr $LINENO' ERR
+
+#=======================================================================
+echo "Reading input parameters, setting dates and save directories. Date= "`date`
+	#. ${PBS_O_WORKDIR}/settings.sh
+	. settings.sh
+
+	(( FORECAST_CYCLE_LEN_IN_MONTHS = FORECAST_CYCLE_LEN_IN_YEARS * 12 ))
+
+	MOMINPUT_DIR=${WDIR}/MOM/INPUT
+
+	# the analysis day of the current cycle ("_CA")
+	JULDAY_CA=`cat ${WDIR}/JULDAY.txt | head -1`
+	DATE_CA=`$dn2date $JULDAY_CA ${JULBASE}`
+	Y_CA=`echo $DATE_CA | cut -b1-4`
+	M_CA=`echo $DATE_CA | cut -b5-6`
+	D_CA=`echo $DATE_CA | cut -b7-8`
+	echo "  first day of this cycle = $DATE_CA"
+
+        (( Y_NA = Y_CA + FORECAST_CYCLE_LEN_IN_YEARS ))
+        JULDAY_NA=`$date2dn $Y_NA $M_CA $D_CA ${JULBASE}`
+	echo "  first day of next cycle = ${Y_NA}${M_CA}${D_CA}"
+
+	# Set save directories
+	CYCLE_END=`cat $WDIR/CYCLE_END.txt | head -1`
+	CYCLE_ID=`cat $WDIR/CYCLE_ID.txt | head -1`
+
+	bv_str=`printf "bv%03d" $CYCLE_ID`
+	SAVEDIR=${WDIR}/${DATE_CA}
+	SAVEDIR_PREV=${SAVEDIR}
+	mkdir -p $SAVEDIR
+	cp ${WDIR}/CYCLE_ID.txt $SAVEDIR
+	cp ${WDIR}/JULDAY.txt $SAVEDIR
+
+	# Move standard output from previous launch
+	if stat -t $WDIR/$EXPNAME*.o* >/dev/null 2>&1 ; then
+		mv $WDIR/$EXPNAME*.o* $SAVEDIR_PREV
+	fi
+	cd ${WDIR}
+#
+#=======================================================================
+echo "At the first cycle : copy MOM input files ; copy ensemble of restarts. Date= "`date`
+if [ ! -d "${WDIR}/mem001"  ] ; then
+	echo "starting INIT. DATE=" `date`
+
+	# Set appropriate diag and field tables
+	for file in diag_table field_table ; do
+		ln -sf  ${REF_DIR}/MODEL/${file}_bgc ${REF_DIR}/MODEL/${file}
+	done
+
+	if [ $Y_CA -gt 2007 ]; then
+		ACO2_FILE='INPUT/co2_obs.padded.nc'
+	else
+		ACO2_FILE='INPUT/co2_obs.nc'
+	fi
+	cat ${REF_DIR}/MODEL/field_table | sed "s|ACO2_FILE|${ACO2_FILE}|" > ${REF_DIR}/MODEL/field_table.tmp
+	mv ${REF_DIR}/MODEL/field_table.tmp ${REF_DIR}/MODEL/field_table
+
+	mkdir -p ${MOMINPUT_DIR}
+	cp ${MOM_BIN_DIR}/${EXECNAME} ${WDIR}/MOM/   # get local binary
+	cp ${MOM_SRC_DIR}/src/postprocessing/mppnccombine/mppnccombine ${WDIR}/MOM/   # get local binary 
+	for file in diag_table field_table data_table merge.sh input.in ; do
+		cp ${REF_DIR}/MODEL/${file} ${WDIR}/MOM
+	done
+	cp ${REF_DIR}/MODEL/run_mom.sh.in $WDIR
+	cp ${BASE_DIR}/INIT/STATIC/* ${MOMINPUT_DIR}
+	JULDAY_CA=`cat ${WDIR}/JULDAY.txt | head -1`
+
+	# Copy initial ensemble
+	for (( mem1 = 1; mem1 <= ENSSIZE; mem1 += NP_MASTER )) ; do
+		(( mem2 = mem1 + NP_MASTER - 1 ))
+		if (( mem2 > $ENSSIZE )) ; then
+			mem2=$ENSSIZE
+		fi
+		for (( mem = mem1; mem <= mem2; ++mem )) ; do
+			(
+			set -eu
+			memstr=`printf "mem%03d" $mem`
+			rm -rf ${WDIR}/$memstr
+			mkdir -p ${WDIR}/$memstr
+			mkdir -p ${WDIR}/$memstr/INPUT
+			mkdir -p ${WDIR}/$memstr/INPUT_SAVE
+			mkdir -p ${WDIR}/$memstr/RESTART
+
+			cp ${BASE_DIR}/INIT/SPONGES/*.nc  ${WDIR}/${memstr}/INPUT
+			
+			cp ${INITENSDIR}/${memstr}/* ${WDIR}/${memstr}/INPUT
+
+			cp ${REF_DIR}/INIT/RESTART/coupler.res.in  ${WDIR}/${memstr}/INPUT
+			for file in diag_table field_table data_table merge.sh mppnccombine ${EXECNAME} ; do
+				ln -s ${WDIR}/MOM/$file ${WDIR}/${memstr}
+			done
+
+			ln -sf ${MOMINPUT_DIR}/*  ${WDIR}/${memstr}/INPUT
+			rm ${WDIR}/${memstr}/INPUT/bgc_param.nc
+			cp ${BGC_PARAM_DIR}/${memstr}.nc ${WDIR}/${memstr}/INPUT/bgc_param.nc
+
+			cat ${WDIR}/${memstr}/INPUT/coupler.res.in\
+				| sed "s|INPUT_YEAR|${Y_CA}|"\
+				| sed "s|INPUT_MONTH|${M_CA}|"\
+				| sed "s|INPUT_DAY|${D_CA}|"\
+				> ${WDIR}/${memstr}/INPUT/coupler.res
+			) &
+		done
+		wait
+	done
+fi
+
+#=======================================================================
+echo "Building namelist. DATE=" `date`
+	#aerosol forcing year  Y_CA=1988; AX=`echo "${Y_CA: -1}"` ;(( AYEAR = Y_CA - AX + 5 )); echo $AYEAR
+	AX=`echo "${Y_CA: -1}"`
+	(( AYEAR = Y_CA - AX + 5 ))
+	if [ $AYEAR -gt 2015 ]; then
+		AYEAR=2015
+	fi
+
+	if [ $Y_CA -gt 2000 ]; then
+		REPEAT_VOLCANO_YEAR='repeat_volcano_year=.true.'
+		VOLCANO_YEAR_USED='volcano_year_used = 2008,'
+	else
+		REPEAT_VOLCANO_YEAR='! repeat_volcano_year=.true.'
+		VOLCANO_YEAR_USED='! volcano_year_used = 2008,'
+	fi
+
+	if (( CYCLE_ID == 0 )) ; then
+		ADAPT=.false.
+		 THUMP=.true.
+	else
+		ADAPT=.false.
+		 THUMP=.false.
+	fi
+
+	NUM_DAYS=0
+	NUM_MONTHS=${FORECAST_CYCLE_LEN_IN_MONTHS}
+	JULBASE_YEAR=`echo $JULBASE | cut -b1-4`
+	JULBASE_MONTH=`echo $JULBASE | cut -b5-6`
+	JULBASE_DAY=`echo $JULBASE | cut -b7-8`
+
+	if [ $Y_CA -gt 2004 ]; then
+		BASIC_OZONE_TYPE=fixed_year
+		OZONE_DATASET_ENTRY='ozone_dataset_entry=2014, 1, 1, 0, 0, 0,'
+		FILENAME=cm3_2014_o3.padded.nc
+	else
+		BASIC_OZONE_TYPE=time_varying
+		OZONE_DATASET_ENTRY='!ozone_dataset_entry=2014, 1, 1, 0, 0, 0,'
+		FILENAME=CM3_CMIP6_1950-2014_O3.nc
+	fi
+
+	cat $WDIR/MOM/input.in \
+		| sed "s/INPUT_AEROSOL_TIME/${AYEAR}, 1, 1, 0, 0, 0/"\
+		| sed "s/INPUT_DAYS/days = ${NUM_DAYS}/"\
+		| sed "s/INPUT_MONTHS/months = ${NUM_MONTHS}/"\
+		| sed "s/CURRENT_DATE/current_date = ${JULBASE_YEAR},${JULBASE_MONTH},${JULBASE_DAY},0,0,0/"\
+		| sed "s/USE_HARD_THUMP/use_hard_thump=${THUMP}/"\
+		| sed "s/USE_ADAPTIVE_RESTORE/use_adaptive_restore=${ADAPT}/" \
+		| sed "s/REPEAT_VOLCANO_YEAR/${REPEAT_VOLCANO_YEAR}/" \
+		| sed "s/VOLCANO_YEAR_USED/${VOLCANO_YEAR_USED}/" \
+		| sed "s/BASIC_OZONE_TYPE/basic_ozone_type = '${BASIC_OZONE_TYPE}'/" \
+		| sed "s/OZONE_DATASET_ENTRY/${OZONE_DATASET_ENTRY}/" \
+		| sed "s/FILENAME/filename = "${FILENAME}"/" \
+		> $WDIR/MOM/input.nml
+
+	echo "starting cycle $CYCLE_ID"
+	date
+
+#=======================================================================
+echo "starting propagation in cycle $CYCLE_ID. DATE=" `date` 
+	date
+	cd ${WDIR}
+	for (( mem1 = 1; mem1 <= ENSSIZE; mem1 += NP_MASTER )) ; do
+		(( mem2 = mem1 + NP_MASTER - 1 ))
+		if (( $mem2 > $ENSSIZE )) ; then
+			mem2=$ENSSIZE
+		fi
+		for (( mem = mem1; mem <= mem2; ++mem )) ; do
+			(
+			set -eu
+			memstr=`printf "mem%03d" $mem`
+			nccopy -u ${WDIR}/${memstr}/INPUT/fv_rst.res.nc ${WDIR}/${memstr}/INPUT/fv_rst.res.nc2 
+			mv ${WDIR}/${memstr}/INPUT/fv_rst.res.nc2 ${WDIR}/${memstr}/INPUT/fv_rst.res.nc   
+			nccopy -u ${WDIR}/${memstr}/INPUT/atmos_tracers.res.nc ${WDIR}/${memstr}/INPUT/atmos_tracers.res.nc2 
+			mv ${WDIR}/${memstr}/INPUT/atmos_tracers.res.nc2 ${WDIR}/${memstr}/INPUT/atmos_tracers.res.nc
+			) &
+		done
+		wait
+	done
+
+	# write MOM script
+	cd $WDIR
+	cp -f $HEADER_MOM ${WDIR}/run_mom.sh
+	cat ${WDIR}/run_mom.sh.in | sed "s/EXEC/${EXECNAME}/" | sed "s/ENSSIZE/${ENSSIZE}/" | sed "s/DT_INPUT/\"${DT}\"/" | sed "s|WDIR_INPUT|\"${WDIR}\"|" | sed "s|CYCLE_ID_INPUT|\"${CYCLE_ID}\"|" | sed "s|MOM_COMMAND_INPUT|${MOM_COMMAND}|" >> ${WDIR}/run_mom.sh
+
+	# launch jobs
+	(( NBATCHES = (ENSSIZE - 1) / BATCHSIZE + 1 ))
+	for (( bid = 0; bid < NBATCHES; ++bid )) ; do
+		(( MEM1 = bid * BATCHSIZE + 1 ))
+		bidstr=`printf "%02d" $bid`
+		if [ ! -f "${WDIR}/MOM-${bidstr}.done" ] ; then
+			JOBNAME="${this_date_print}-${CYCLE_ID}-${bidstr}"
+			job_script_name="run_mom.${bidstr}.sh"
+			cat ${WDIR}/run_mom.sh | sed "s|MEM1_INPUT|\"${MEM1}\"|" | sed "s|bidstr_INPUT|\"${bidstr}\"|" | sed "s|JOBNAME_INPUT|\"${JOBNAME}\"|" > ${WDIR}/${job_script_name}
+			if [ "${queue}" = "pbs" ] ; then
+				jobid[$bid]=`qsub ${job_script_name}`
+			elif [ "${queue}" = "slurm" ] ; then
+				jobid[$bid]=`sbatch ${job_script_name} 2>/dev/null | tail -1 | awk '{print $4}'` || true
+			else
+				echo 'Unsupported queing system'
+				exit
+			fi
+		else
+			jobid[$bid]=
+		fi
+	done
+
+	echo -n "   now waiting for all MOM jobs to finish:"
+
+	finished=0
+	count=0
+	while (( ! finished )) ; do
+		finished=1
+		if stat -t mem*/MOM.done >/dev/null 2>&1 ; then
+			if (( `ls mem*/MOM.done | wc -l` == ENSSIZE )) ; then
+				break
+			fi
+		fi
+		for (( bid = 0; bid < NBATCHES; ++bid )) ; do
+			if [ -z "${jobid[$bid]}" ] ; then
+				continue
+			fi
+			if [ "${queue}" = "pbs" ] ; then
+				answer=`qstat ${jobid[$bid]} 2>/dev/null | tail -1 | awk '{print $5}'` || true
+				complete_code='C'
+			elif [ "${queue}" = "slurm" ] ; then
+				answer=`squeue --job ${jobid[$bid]} 2>/dev/null | tail -1 | awk '{print $6}'` || true
+				complete_code='CD'
+			else
+				echo 'Unsupported queing system'
+				exit
+			fi
+			echo ${jobid[$bid]}
+			echo $answer
+			if [ -z "${answer}" -o "${answer}" == ${complete_code} ] ; then
+				echo -n " ${bid}"
+				jobid[$bid]=
+			else
+				finished=0
+
+				exit # not continually monitoring
+
+				sleep 20
+				(( count += 1 ))
+				break
+			fi
+		done
+	done
+	echo " done"
+	echo "   "`date`
+
+	# kill scheduled but not started jobs
+	for (( bid = 0; bid < NBATCHES; ++bid )) ; do
+		if [ -z "${jobid[$bid]}" ] ; then
+			continue
+		fi
+		if [ "${queue}" = "pbs" ] ; then
+			answer=`qstat ${jobid[$bid]} 2>/dev/null | tail -1 | awk '{print $5}'` || true
+		elif [ "${queue}" = "slurm" ] ; then
+			answer=`squeue --job ${jobid[$bid]} 2>/dev/null | tail -1 | awk '{print $6}'` || true
+		else
+			echo 'Unsupported queing system'
+			exit
+		fi
+		echo $answer
+		if [ -z "${answer}" -o "${answer}" == ${complete_code} ] ; then
+			jobid[$bid]=
+		else
+			qdel -x ${jobid[$bid]} || true
+			jobid[$bid]=
+		fi
+	done
+	rm -rf mem*/ENGAGED* || true
+
+	# check completion
+	for (( mem = 1; mem <= ENSSIZE; ++mem )) ; do
+		memstr=`printf "mem%03d" $mem`
+		if [ ! -f "${WDIR}/${memstr}/MOM.done" ] ; then
+			echo "Model run from $DATE_CA (cycle ${CYCLE_ID}, member ${mem}) failed, bailing out"
+			exit 1
+		fi
+	done
+	wait
+
+#=======================================================================
+echo "Cleaning up standard output and input files. DATE=" `date`
+	for (( mem1 = 1; mem1 <= ENSSIZE; mem1 += NP_MASTER )) ; do
+		(( mem2 = mem1 + NP_MASTER - 1 ))
+		if (( $mem2 > $ENSSIZE )) ; then
+			mem2=$ENSSIZE
+		fi 
+		for (( mem = mem1; mem <= mem2; ++mem )) ; do
+			( 
+			set -eu
+			memstr=`printf "mem%03d" $mem`
+                        rm -rf ${WDIR}/${memstr}/INPUT_SAVE
+                        mkdir ${WDIR}/${memstr}/INPUT_SAVE
+			cp -Pf ${WDIR}/${memstr}/INPUT/* ${WDIR}/${memstr}/INPUT_SAVE 
+			) &
+		done
+		wait
+	done
+
+	cp ${WDIR}/MOM/input.nml $SAVEDIR
+	rm -f ${WDIR}/*.done ${WDIR}/mem???/*.done
+	rm -f ${WDIR}/mem???/*.out
+	echo $JULDAY_NA > ${WDIR}/JULDAY.txt
+	mv $WDIR/CYCLE_ID.txt *.o* $SAVEDIR ; (( CYCLE_ID += 1 )) ; echo $CYCLE_ID > $WDIR/CYCLE_ID.txt
+	if (( CYCLE_ID >= CYCLE_END )) ; then
+		echo "end cycle reached, terminating"
+		exit 0
+	fi
+	if [ -f "${WDIR}/STOP" ] ; then
+		echo "STOP file detected, terminating" ; exit 0
+	fi
+	cd $WDIR
+	./launch.sh
+#
+#=======================================================================
+# EOF
+#=======================================================================

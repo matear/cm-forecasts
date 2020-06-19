@@ -1,0 +1,88 @@
+# File: run_mom.sh.in
+# Purpose: input for BASH script for running MOM5 models
+# Author: Vassili Kitsios, modified from previous script of Pavel Sakov
+# Date: 2020
+
+set -euxEo pipefail
+ulimit -c unlimited
+export F_UFMTENDIAN=big
+
+module list
+
+WDIR=WDIR_INPUT
+CYCLE_ID=CYCLE_ID_INPUT
+bidstr=bidstr_INPUT
+mem=MEM1_INPUT
+DT=DT_INPUT
+
+JULDAY=`cat ${WDIR}/JULDAY.txt | head -1`
+
+memstr=`printf "mem%03d" $mem`
+cd ${WDIR}/$memstr
+
+if stat -t  MOM.done >/dev/null 2>&1 ; then
+    continue
+fi
+
+if [ -d ENGAGED ] ; then
+    continue
+fi
+
+if stat -t MOM.failed >/dev/null 2>&1 ; then
+    continue
+fi
+
+if mkdir "ENGAGED" ; then
+    touch ENGAGED-$bidstr
+else
+    continue
+fi
+
+# Build namelist
+set +e
+rm -f input.nml
+cat ${WDIR}/MOM/input.nml | sed "s/.*dt_ocean.*/dt_ocean = ${DT}/" | sed "s/.*dt_cpld.*/dt_cpld = ${DT}/" | sed "s/.*dt_atmos.*/dt_atmos = ${DT}/" > input.nml
+
+# Launch MOM job
+MOM_COMMAND_INPUT ./EXEC  2>&1 | tee mom-${DT}.out
+
+# Checck for successful completion
+set -e
+if  stat -t *.nc.0000 >/dev/null 2>&1 ; then
+    echo "full success"
+else
+    echo "mom-${CYCLE_ID}-MOM (batch ${bidstr}, member $mem) failed, bailing out"
+    rm -rf ENGAGED*
+    touch MOM.failed
+    exit
+fi
+
+./merge.sh
+
+# backup input files
+mkdir -p INPUT_SAVE 
+files=`ls INPUT/*.res.nc*`
+for file in $files ; do
+    if [ -f "$file" ] ; then
+        mv $file INPUT_SAVE
+    fi
+done
+mv -f RESTART/* INPUT
+rm -f INPUT/????????.??0000.*.nc
+rm -f INPUT/????????.??0000.*.res
+
+touch MOM.done
+rm -rf ENGAGED*
+
+# Launch Zaring scripts
+
+# Check if all completed
+num_complete=`ls ../mem???/MOM.done | wc -l`
+if (( num_complete == ENSSIZE )) ; then
+    echo "All ensemble members complete."
+    echo "Launching reshuffle."
+fi
+
+exit
+
+

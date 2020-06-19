@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+#PBS -S /bin/bash
+#PBS -P v14
+#PBS -q normal
+#PBS -l walltime=4:00:00
+#PBS -l ncpus=48
+#PBS -l mem=96GB
+#PBS -j oe
+#PBS -l wd
+#PBS -lstorage=gdata/v14+scratch/v14

@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+#PBS -S /bin/bash
+#PBS -P v14
+#PBS -q normal
+#PBS -l walltime=8:00:00
+#PBS -V
+#PBS -j oe
+#PBS -l mem=256GB
+#PBS -l ncpus=128
+#PBS -N JOBNAME_INPUT
+
+module swap openmpi openmpi/1.10.2
+module list
+

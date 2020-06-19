@@ -1,0 +1,66 @@
+# Specific local files
+
+# python and jupyter notebook files
+.ipynb_checkpoints
+__pycache__
+
+# images / documents
+*.html
+*.png
+*.pdf
+*.eps
+*.ps
+
+# compressed files
+*.tgz
+*.zip
+
+# Vscode IDE files
+.vscode
+
+# Mac stuff
+._*
+.DS_Store
+
+# standard error output files
+*.err
+
+# backup files
+*.bak
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# HDF5 compiled files
+*.Plo
+*.Po

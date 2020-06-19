@@ -2,11 +2,11 @@
 
 #####################################################################
 # File: run_CAFE_forecasts.sh.in
-# Author: Paul Sandery adapted from Pavel Sakov
-# Created: 2018
-# Purpose: input for BASH script for running EnKF with CM21 on raijin
-# Description: the launching script lauch.sh converts this script into run_CAFE_forecasts.sh using settings from settings.sh and local.sh.
-# Dependencies: depends on a number of other scripts including run_mom.sh.in.
+# Author: Vassili Kitsios adapted from Paul Sandery adapted from Pavel Sakov
+# Created: 2020
+# Purpose: input for BASH script for running CM21 forecasts on Gadi and Magnus
+# Description: the launching script lauch.sh converts this script into run_CAFE_forecasts.sh using settings from settings.sh
+# Dependencies: depends on a number of other scripts including run_mom.sh.in
 #####################################################################
 
 umask 027
@@ -20,7 +20,6 @@ trap 'traperr $LINENO' ERR
 
 #=======================================================================
 echo "Reading input parameters, setting dates and save directories. Date= "`date`
-	#. ${PBS_O_WORKDIR}/settings.sh
 	. settings.sh
 
 	(( FORECAST_CYCLE_LEN_IN_MONTHS = FORECAST_CYCLE_LEN_IN_YEARS * 12 ))

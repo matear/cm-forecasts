@@ -25,6 +25,8 @@ if [ "${HOSTNAME:0:1}" = "g" ] ; then
         MOM_BIN_DIR=${MOM_SRC_DIR}"/exec/"${machine}"/CM2M/"
         dn2date=/home/548/pas548/bin/dn2date
         date2dn=/home/548/pas548/bin/date2dn
+	POSTPROCESSING_SRCDIR="/g/data/v14/vxk563/CAFE/forecasts/post-processing"
+	ZARR_PATH="/g/data/v14/ds0092/software/zarrtools"
 elif [ "${HOSTNAME:0:1}" = "m" ] ||  [ "${HOSTNAME:0:1}" = "n" ] ; then
 	machine='magnus.pawsey.org.au'
 	data_mover="vkitsios@hpc-data.pawsey.org.au"
@@ -40,6 +42,8 @@ elif [ "${HOSTNAME:0:1}" = "m" ] ||  [ "${HOSTNAME:0:1}" = "n" ] ; then
 	MOM_BIN_DIR=${MOM_SRC_DIR}"/exec/"${machine}"/CM2M/"
 	dn2date=./src/dn2date/dn2date
 	date2dn=./src/dn2date/date2dn
+	POSTPROCESSING_SRCDIR="??"
+	ZARR_PATH="??"
 fi
 
 echo "Running on machine "$machine

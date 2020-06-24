@@ -112,5 +112,4 @@ if (( num_complete == ENSSIZE )) ; then
 	fi
 fi
 
-exit
 

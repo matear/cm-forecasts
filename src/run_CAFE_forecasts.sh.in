@@ -206,17 +206,17 @@ echo "starting propagation in cycle $CYCLE_ID. DATE=" `date`
 	# write MOM script
 	cd $WDIR
 	cp -f $HEADER_MOM ${WDIR}/run_mom.sh
-	cat ${WDIR}/run_mom.sh.in\
-		| sed "s/PYTHON_INPUT/${PYTHON}/"\
-		| sed "s/ZARR_PATH_INPUT/${ZARR_PATH}/"\
-		| sed "s/POSTPROCESSING_SRCDIR_INPUT/${POSTPROCESSING_SRCDIR}/"\
-		| sed "s/EXEC/${EXECNAME}/"\
-		| sed "s/ENSSIZE/${ENSSIZE}/"\
-		| sed "s/DT_INPUT/\"${DT}\"/"\
-		| sed "s|WDIR_INPUT|\"${WDIR}\"|"\
-		| sed "s|CYCLE_ID_INPUT|\"${CYCLE_ID}\"|"\
-		| sed "s|MOM_COMMAND_INPUT|${MOM_COMMAND}|"\
-		>> ${WDIR}/run_mom.sh
+        cat ${WDIR}/run_mom.sh.in\
+                | sed "s|PYTHON_INPUT|${PYTHON}|"\
+                | sed "s|ZARR_PATH_INPUT|${ZARR_PATH}|"\
+                | sed "s|POSTPROCESSING_SRCDIR_INPUT|${POSTPROCESSING_SRCDIR}|"\
+                | sed "s|EXEC|${EXECNAME}|"\
+                | sed "s|ENSSIZE|${ENSSIZE}|"\
+                | sed "s|DT_INPUT|\"${DT}\"|"\
+                | sed "s|WDIR_INPUT|\"${WDIR}\"|"\
+                | sed "s|CYCLE_ID_INPUT|\"${CYCLE_ID}\"|"\
+                | sed "s|MOM_COMMAND_INPUT|${MOM_COMMAND}|"\
+                >> ${WDIR}/run_mom.sh
 
 	# launch jobs
 	(( NBATCHES = (ENSSIZE - 1) / BATCHSIZE + 1 ))

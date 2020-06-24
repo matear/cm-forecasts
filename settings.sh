@@ -24,7 +24,8 @@ if [ "${HOSTNAME:0:1}" = "g" ] ; then
         BGC_PARAM_DIR=${BASE_DIR}"/INIT/bgc_para/"
         MOM_BIN_DIR=${MOM_SRC_DIR}"/exec/"${machine}"/CM2M/"
         dn2date=/home/548/pas548/bin/dn2date
-        date2dn=/home/548/pas548/bin/date2dn
+        date2dn=/home/548/pas548/bin/date2d
+	PYTHON="/g/data/v14/ds0092/software/miniconda3/envs/zarrify/bin"
 	POSTPROCESSING_SRCDIR="/g/data/v14/vxk563/CAFE/forecasts/post-processing"
 	ZARR_PATH="/g/data/v14/ds0092/software/zarrtools"
 elif [ "${HOSTNAME:0:1}" = "m" ] ||  [ "${HOSTNAME:0:1}" = "n" ] ; then
@@ -42,6 +43,7 @@ elif [ "${HOSTNAME:0:1}" = "m" ] ||  [ "${HOSTNAME:0:1}" = "n" ] ; then
 	MOM_BIN_DIR=${MOM_SRC_DIR}"/exec/"${machine}"/CM2M/"
 	dn2date=./src/dn2date/dn2date
 	date2dn=./src/dn2date/date2dn
+	PYTHON="??"
 	POSTPROCESSING_SRCDIR="??"
 	ZARR_PATH="??"
 fi

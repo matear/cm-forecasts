@@ -207,6 +207,7 @@ echo "starting propagation in cycle $CYCLE_ID. DATE=" `date`
 	cd $WDIR
 	cp -f $HEADER_MOM ${WDIR}/run_mom.sh
 	cat ${WDIR}/run_mom.sh.in\
+		| sed "s/PYTHON_INPUT/${PYTHON}/"\
 		| sed "s/ZARR_PATH_INPUT/${ZARR_PATH}/"\
 		| sed "s/POSTPROCESSING_SRCDIR_INPUT/${POSTPROCESSING_SRCDIR}/"\
 		| sed "s/EXEC/${EXECNAME}/"\

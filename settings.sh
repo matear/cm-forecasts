@@ -3,9 +3,9 @@
 #=======================================================================
 DESCRIPTION='CAFE-60 forecasts'
 
-ENSSIZE=2
-FORECAST_CYCLE_LEN_IN_YEARS=1
-this_date=" 2019 11 1"
+ENSSIZE=96
+FORECAST_CYCLE_LEN_IN_YEARS=10
+this_date=" 2018 11 1"
 JULBASE="1800 1 1"
 
 #=======================================================================
@@ -15,7 +15,7 @@ if [ "${HOSTNAME:0:1}" = "g" ] ; then
         machine='gadi.nci.org.au'
         data_mover="vxk563@gadi-dm.nci.org.au"
         MOM_SRC_DIR="/home/548/pas548/src/mom_cafe"
-        OUTPUT_DIR="/scratch/v14/vxk563/CAFE/forecasts/f_ALCG_test/WIP/"
+        OUTPUT_DIR="/scratch/v14/vxk563/CAFE/forecasts/f6/WIP/"
         INITENSDIR_BASE="/g/data/v14/vxk563/CAFE/data_assimilation/d60/save"
         BASE_DIR="/g/data/v14/vxk563/coupled_climate-parameter_estimation-KSOS/CM21_c5"
         NP_MASTER=48
@@ -75,14 +75,14 @@ fi
 control_name=c5
 data_assimilation_name=d60
 perturbation_name=pX
-forecast_name=f_ALCG_test
+forecast_name=f6
 contact_name="Decadal Activity 1 - Data Assimilation"
 references="O'Kane, T.J., Sandery, P.A., Monselesan, D.P., Sakov, P., Chamberlain, M.A., Matear, R.J., Collier, M., Squire, D. and Stevens, L., 2019, 'Coupled data assimilation and ensemble initialisation with application to multi-year ENSO prediction', Journal of Climate."
 
 #=======================================================================
 # System settings
 this_date_print=`$dn2date $JULDAY ${JULBASE}`
-EXPNAME=${control_name}-${data_assimilation_name}-${perturbation_name}-${forecast_name}-${this_date_print}-2members_1year_test
+EXPNAME=${control_name}-${data_assimilation_name}-${perturbation_name}-${forecast_name}-${this_date_print}
 WDIR=${OUTPUT_DIR}/${EXPNAME}
 REF_DIR=${WDIR}"/ref"
 HEADER_MASTER=${REF_DIR}"/header_master."${machine}

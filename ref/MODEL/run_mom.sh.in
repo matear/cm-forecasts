@@ -82,7 +82,6 @@ if [ -f "MOM.done" ]; then
 	fi
 fi
 
-
 # Launch Zaring scripts
 if [ -f "REGRID.done" ]; then
 	if [ ! -f "ZARR.done" ]; then
@@ -93,11 +92,10 @@ if [ -f "REGRID.done" ]; then
 	fi
 fi
 
-
 # Check if all zarring completed
 num_complete=`ls ../mem???/ZARR.done | wc -l`
 if (( num_complete == ENSSIZE )) ; then
-	MERGE_OUTPUT_DIR=${WDIR}.ZARR
+        MERGE_OUTPUT_DIR=${WDIR}/ZARR
 	if [ ! -d "${MERGE_OUTPUT_DIR}" ]; then
 		paths_to_merge=( `ls -d ../mem???` )
 		realms_as_separate_jobs=( atmos_daily atmos_isobaric_daily ocean_month ) # all realms not specified here will be lumped into single additional job
@@ -105,11 +103,11 @@ if (( num_complete == ENSSIZE )) ; then
 		remaining_realms=( `echo ${all_realms[@]} ${realms_as_separate_jobs[@]} | tr ' ' '\n' | sort | uniq -u` )
 
 		mkdir -p ${MERGE_OUTPUT_DIR}
+                cp -v ${POSTPROCESSING_SRCDIR}/merge_zarr_members.py .
 		for realm in ${realms_as_separate_jobs[@]}; do
 			qsub -v "paths_to_merge=$(echo ${paths_to_merge[@]}), zarr_path=${MERGE_OUTPUT_DIR}, realms=$realm, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE" ${POSTPROCESSING_SRCDIR}/run_merge_members_Gadi.sh
 		done
 		qsub -v "paths_to_merge=$(echo ${paths_to_merge[@]}), zarr_path=${MERGE_OUTPUT_DIR}, realms=$(echo ${remaining_realms[@]}), ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE" ${POSTPROCESSING_SRCDIR}/run_merge_members_Gadi.sh
 	fi
 fi
-
 

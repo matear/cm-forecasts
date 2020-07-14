@@ -7,6 +7,6 @@
 #PBS -l mem=576GB
 #PBS -l ncpus=144
 #PBS -lstorage=gdata/v14+scratch/v14
-#PBS -P v14
-##PBS -P ux06
+##PBS -P v14
+#PBS -P ux06
 #PBS -N JOBNAME_INPUT

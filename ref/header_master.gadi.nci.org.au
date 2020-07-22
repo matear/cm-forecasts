@@ -9,4 +9,4 @@
 #PBS -l mem=96GB
 #PBS -j oe
 #PBS -l wd
-#PBS -lstorage=gdata/v14+scratch/v14
+#PBS -lstorage=gdata/v14+scratch/ux06

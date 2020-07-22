@@ -27,14 +27,17 @@ JULDAY=`cat ${WDIR}/JULDAY.txt | head -1`
 memstr=`printf "mem%03d" $mem`
 cd ${WDIR}/$memstr
 
+#====================================================================
+# Check previous failures have been cleaned up
 if [ -f "MOM.failed" ]; then
 	exit
 fi
 
-if [ -d ENGAGED ]; then
+if [ -f "NETCDF_COMBINE.failed" ]; then
 	exit
 fi
 
+#====================================================================
 if [ ! -f "MOM.done" ]; then
 	# Build namelist
 	set +e
@@ -55,12 +58,9 @@ if [ ! -f "MOM.done" ]; then
 		echo "full success"
 	else
 		echo "mom-${CYCLE_ID}-MOM (member $mem) failed, bailing out"
-		rm -rf ENGAGED*
 		touch MOM.failed
 		exit
 	fi
-
-	./merge.sh
 
 	# backup input files
 	mkdir -p INPUT_SAVE 
@@ -75,24 +75,35 @@ if [ ! -f "MOM.done" ]; then
 	rm -f INPUT/????????.??0000.*.res
 
 	touch MOM.done
-	rm -rf ENGAGED*
 fi
 
+#====================================================================
+if [ ! -f "NETCDF_COMBINE.done" ]; then
+        ./merge.sh
+        num_not_combined=`ls *.nc.* | wc -l`
+        if (( num_not_combined == 0 )) ; then
+                touch NETCDF_COMBINE.done
+        else
+                touch NETCDF_COMBINE.failed
+                exit
+        fi
+fi
+
+#====================================================================
+# Launch Regridding scripts
 export PATH="${PYTHON}:${PYTHON}/bin:${PATH}"
 export PYTHONPATH="${PYTHONPATH}:${ZARR_PATH}"
-
 mkdir -p $POSTPROCESSING_LOGDIR
-mkdir -p $ZARR_OUTPUT_PATH
-
-# Launch Regridding scripts
-if [ -f "MOM.done" ]; then
+if [ -f "NETCDF_COMBINE.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
                 ${POSTPROCESSING_SRCDIR}/convert_forecast_to_isobaric_Gadi.sh ./
                 touch ${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done
         fi
 fi
 
+#====================================================================
 # Launch Zarring scripts
+mkdir -p $ZARR_OUTPUT_PATH
 if [ -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.done" ]; then
                 cp -v ${POSTPROCESSING_SRCDIR}/$ZARR_CONFIG_FILE .
@@ -109,6 +120,7 @@ if [ -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
         fi
 fi
 
+#====================================================================
 # Check if all zarring completed
 num_complete=`ls ${POSTPROCESSING_LOGDIR}/ZARR_*.done | wc -l`
 if (( num_complete == ENSSIZE )) ; then
@@ -127,3 +139,6 @@ if (( num_complete == ENSSIZE )) ; then
         fi
 fi
 
+#====================================================================
+# EOF
+#====================================================================

@@ -3,9 +3,11 @@
 #=======================================================================
 DESCRIPTION='CAFE-60 forecasts'
 
-ENSSIZE=96
-FORECAST_CYCLE_LEN_IN_YEARS=10
-this_date=" 2018 11 1"
+ENSSIZE=2
+FORECAST_CYCLE_LEN_IN_YEARS=1
+#ENSSIZE=96
+#FORECAST_CYCLE_LEN_IN_YEARS=10
+this_date=" 2017 11 1"
 JULBASE="1800 1 1"
 
 #=======================================================================
@@ -15,9 +17,9 @@ if [ "${HOSTNAME:0:1}" = "g" ] ; then
         machine='gadi.nci.org.au'
         data_mover="vxk563@gadi-dm.nci.org.au"
         MOM_SRC_DIR="/home/548/pas548/src/mom_cafe"
-        OUTPUT_DIR="/scratch/v14/vxk563/CAFE/forecasts/f6/WIP/"
+        OUTPUT_DIR="/scratch/ux06/vxk563/CAFE/forecasts/f6/WIP/"
         INITENSDIR_BASE="/g/data/v14/vxk563/CAFE/data_assimilation/d60/save"
-        BASE_DIR="/g/data/v14/vxk563/coupled_climate-parameter_estimation-KSOS/CM21_c5"
+        BASE_DIR="/g/data/v14/vxk563/CAFE/CM21_c5"
         NP_MASTER=48
         queue='pbs'
         MOM_COMMAND="mpirun -np 128"
@@ -82,7 +84,7 @@ references="O'Kane, T.J., Sandery, P.A., Monselesan, D.P., Sakov, P., Chamberlai
 #=======================================================================
 # System settings
 this_date_print=`$dn2date $JULDAY ${JULBASE}`
-EXPNAME=${control_name}-${data_assimilation_name}-${perturbation_name}-${forecast_name}-${this_date_print}
+EXPNAME=${control_name}-${data_assimilation_name}-${perturbation_name}-${forecast_name}-${this_date_print}-2member_1year
 WDIR=${OUTPUT_DIR}/${EXPNAME}
 REF_DIR=${WDIR}"/ref"
 HEADER_MASTER=${REF_DIR}"/header_master."${machine}

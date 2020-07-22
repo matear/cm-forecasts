@@ -554,7 +554,7 @@ AccessOcean-AM2
 #
 ## instantaneous output monthly
  "soil","cover_type",  "cover_type",  "land_month%4yr%2mo",  "all", .true., "none", 2
- "soil","zsurf",       "zsurf",       "land_month%4yr%2mo",  "all", .true., "none", 2
+# "soil","zsurf",       "zsurf",       "land_month%4yr%2mo",  "all", .true., "none", 2
  "soil","area",        "area",        "land_month%4yr%2mo",  "all", .true., "none", 2
 #
 ## river discharge
@@ -703,10 +703,10 @@ AccessOcean-AM2
  "moist",     "awp",         "awp",         "atmos_month%4yr%2mo", "all", .true.,  "none", 2
 
 
-# "dynamics",  "zsurf",       "zsurf",       "atmos_daily%4yr%2mo", "all", .false., "none", 2
+ "dynamics",  "zsurf",       "zsurf",       "atmos_daily%4yr%2mo", "all", .false., "none", 2
  "dynamics",  "bk",          "bk",          "atmos_daily%4yr%2mo", "all", .false., "none", 2
  "dynamics",  "pk",          "pk",          "atmos_daily%4yr%2mo", "all", .false., "none", 2
-# "dynamics",  "zsurf",       "zsurf",       "atmos_month%4yr%2mo", "all", .false., "none", 2
+ "dynamics",  "zsurf",       "zsurf",       "atmos_month%4yr%2mo", "all", .false., "none", 2
 # "dynamics",  "cld_amt",     "cld_amt",     "atmos_month%4yr%2mo", "all", .true.,  "none", 2
 # "dynamics",  "ice_wat",     "ice_wat",     "atmos_month%4yr%2mo", "all", .true.,  "none", 2
 # "dynamics",  "liq_wat",     "liq_wat",     "atmos_month%4yr%2mo", "all", .true.,  "none", 2

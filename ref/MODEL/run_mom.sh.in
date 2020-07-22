@@ -11,13 +11,16 @@ module list
 
 WDIR=WDIR_INPUT
 CYCLE_ID=CYCLE_ID_INPUT
-bidstr=bidstr_INPUT
+months=MONTHS_INPUT
 mem=MEM1_INPUT
 DT=DT_INPUT
-POSTPROCESSING_SRCDIR=POSTPROCESSING_SRCDIR_INPUT
+
 PYTHON=PYTHON_INPUT
+POSTPROCESSING_SRCDIR=POSTPROCESSING_SRCDIR_INPUT
 ZARR_PATH=ZARR_PATH_INPUT
-ZARR_CONFIG_FILE=zarrify_specs.json
+ZARR_CONFIG_FILE=zarr_specs_CAFE-f6.json
+ZARR_OUTPUT_PATH=../ZARR
+POSTPROCESSING_LOGDIR=../postprocessing_logs
 
 JULDAY=`cat ${WDIR}/JULDAY.txt | head -1`
 
@@ -36,7 +39,12 @@ if [ ! -f "MOM.done" ]; then
 	# Build namelist
 	set +e
 	rm -f input.nml
-	cat ${WDIR}/MOM/input.nml | sed "s/.*dt_ocean.*/dt_ocean = ${DT}/" | sed "s/.*dt_cpld.*/dt_cpld = ${DT}/" | sed "s/.*dt_atmos.*/dt_atmos = ${DT}/" > input.nml
+	cat ${WDIR}/MOM/input.nml \
+		| sed "s/.*dt_ocean.*/dt_ocean = ${DT}/"\
+	       	| sed "s/.*dt_cpld.*/dt_cpld = ${DT}/"\
+	       	| sed "s/.*dt_atmos.*/dt_atmos = ${DT}/"\
+		| sed "s/INPUT_MONTHS/months = ${months}/"\
+	       	> input.nml
 
 	# Launch MOM job
 	MOM_COMMAND_INPUT ./EXEC  2>&1 | tee mom-${DT}.out
@@ -46,7 +54,7 @@ if [ ! -f "MOM.done" ]; then
 	if  stat -t *.nc.0000 >/dev/null 2>&1 ; then
 		echo "full success"
 	else
-		echo "mom-${CYCLE_ID}-MOM (batch ${bidstr}, member $mem) failed, bailing out"
+		echo "mom-${CYCLE_ID}-MOM (member $mem) failed, bailing out"
 		rm -rf ENGAGED*
 		touch MOM.failed
 		exit
@@ -73,41 +81,49 @@ fi
 export PATH="${PYTHON}:${PYTHON}/bin:${PATH}"
 export PYTHONPATH="${PYTHONPATH}:${ZARR_PATH}"
 
+mkdir -p $POSTPROCESSING_LOGDIR
+mkdir -p $ZARR_OUTPUT_PATH
 
 # Launch Regridding scripts
 if [ -f "MOM.done" ]; then
-	if [ ! -f "REGRID.done" ]; then
-		${POSTPROCESSING_SRCDIR}/convert_forecast_to_isobaric_Gadi.sh ./
-		touch REGRID.done
-	fi
+        if [ ! -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
+                ${POSTPROCESSING_SRCDIR}/convert_forecast_to_isobaric_Gadi.sh ./
+                touch ${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done
+        fi
 fi
 
-# Launch Zaring scripts
-if [ -f "REGRID.done" ]; then
-	if [ ! -f "ZARR.done" ]; then
-		cp -v ${POSTPROCESSING_SRCDIR}/$ZARR_CONFIG_FILE .
-		OUTPUT_DIR='./'
-		python ${POSTPROCESSING_SRCDIR}/convert_forecast_to_zarr.py ${WDIR} ${OUTPUT_DIR} -r "all" -e $mem -c $ZARR_CONFIG_FILE > zarr_${memstr}.out 2>&1
-		touch ZARR.done
-	fi
+# Launch Zarring scripts
+if [ -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
+        if [ ! -f "${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.done" ]; then
+                cp -v ${POSTPROCESSING_SRCDIR}/$ZARR_CONFIG_FILE .
+                OUTPUT_DIR=${ZARR_OUTPUT_PATH}/${memstr}
+                # Create zarr collections on node local storage -----
+                jobfs_path=${PBS_JOBFS}/ZARR
+                python ${POSTPROCESSING_SRCDIR}/convert_forecast_to_zarr.py ${WDIR} ${jobfs_path} -r "all" -e $mem -c $ZARR_CONFIG_FILE --zip_output \
+                    > ${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.progress 2>&1
+                # Copy zips to zarr_path -----
+                echo "Copying collections to ${OUTPUT_DIR}..." >>${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.progress
+                mkdir -p $OUTPUT_DIR
+                cp ${jobfs_path}/*.zarr.zip $OUTPUT_DIR >>${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.progress 2>&1
+                touch ${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.done
+        fi
 fi
 
 # Check if all zarring completed
-num_complete=`ls ../mem???/ZARR.done | wc -l`
+num_complete=`ls ${POSTPROCESSING_LOGDIR}/ZARR_*.done | wc -l`
 if (( num_complete == ENSSIZE )) ; then
-        MERGE_OUTPUT_DIR=${WDIR}/ZARR
-	if [ ! -d "${MERGE_OUTPUT_DIR}" ]; then
-		paths_to_merge=( `ls -d ../mem???` )
-		realms_as_separate_jobs=( atmos_daily atmos_isobaric_daily ocean_month ) # all realms not specified here will be lumped into single additional job
-		all_realms=$(python ${POSTPROCESSING_SRCDIR}/parse_realms.py < "$ZARR_CONFIG_FILE")
-		remaining_realms=( `echo ${all_realms[@]} ${realms_as_separate_jobs[@]} | tr ' ' '\n' | sort | uniq -u` )
-
-		mkdir -p ${MERGE_OUTPUT_DIR}
-                cp -v ${POSTPROCESSING_SRCDIR}/merge_zarr_members.py .
-		for realm in ${realms_as_separate_jobs[@]}; do
-			qsub -v "paths_to_merge=$(echo ${paths_to_merge[@]}), zarr_path=${MERGE_OUTPUT_DIR}, realms=$realm, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE" ${POSTPROCESSING_SRCDIR}/run_merge_members_Gadi.sh
-		done
-		qsub -v "paths_to_merge=$(echo ${paths_to_merge[@]}), zarr_path=${MERGE_OUTPUT_DIR}, realms=$(echo ${remaining_realms[@]}), ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE" ${POSTPROCESSING_SRCDIR}/run_merge_members_Gadi.sh
-	fi
+        paths_to_merge=( `ls -d ${ZARR_OUTPUT_PATH}/mem???` )
+        realms_as_separate_jobs=( atmos_daily atmos_isobaric_daily ocean_month ocean_bgc_month ) # all realms not specified here will be lumped into single additional job
+        exclude_realms=( ) # realms not to merge (e.g. if already done)
+        all_realms=$(python ${POSTPROCESSING_SRCDIR}/parse_realms.py < "$ZARR_CONFIG_FILE")
+        remaining_realms=( `echo ${all_realms[@]} ${realms_as_separate_jobs[@]} ${exclude_realms[@]} | tr ' ' '\n' | sort | uniq -u` )
+        for realm in ${realms_as_separate_jobs[@]}; do
+                if [ ! -f "${POSTPROCESSING_LOGDIR}/MERGE_${realm}.done" ]; then
+                        qsub -v "paths_to_merge=$(echo ${paths_to_merge[@]}), zarr_path=${ZARR_OUTPUT_PATH}, realms=$realm, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, LOG_DIR=$POSTPROCESSING_LOGDIR" ${POSTPROCESSING_SRCDIR}/run_merge_members_Gadi.sh
+                fi
+        done
+        if [ ! -f "${POSTPROCESSING_LOGDIR}/MERGE_${remaining_realms%% *}.done" ]; then
+                qsub -v "paths_to_merge=$(echo ${paths_to_merge[@]}), zarr_path=${ZARR_OUTPUT_PATH}, realms=$(echo ${remaining_realms[@]}), ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, LOG_DIR=$POSTPROCESSING_LOGDIR" ${POSTPROCESSING_SRCDIR}/run_merge_members_Gadi.sh
+        fi
 fi
 

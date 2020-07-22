@@ -167,7 +167,6 @@ echo "Building namelist. DATE=" `date`
 	cat $WDIR/MOM/input.in \
 		| sed "s/INPUT_AEROSOL_TIME/${AYEAR}, 1, 1, 0, 0, 0/"\
 		| sed "s/INPUT_DAYS/days = ${NUM_DAYS}/"\
-		| sed "s/INPUT_MONTHS/months = ${NUM_MONTHS}/"\
 		| sed "s/CURRENT_DATE/current_date = ${JULBASE_YEAR},${JULBASE_MONTH},${JULBASE_DAY},0,0,0/"\
 		| sed "s/USE_HARD_THUMP/use_hard_thump=${THUMP}/"\
 		| sed "s/USE_ADAPTIVE_RESTORE/use_adaptive_restore=${ADAPT}/" \
@@ -222,11 +221,16 @@ echo "starting propagation in cycle $CYCLE_ID. DATE=" `date`
 	(( NBATCHES = (ENSSIZE - 1) / BATCHSIZE + 1 ))
 	for (( bid = 0; bid < NBATCHES; ++bid )) ; do
 		(( MEM1 = bid * BATCHSIZE + 1 ))
-		bidstr=`printf "%02d" $bid`
+		(( bid_num = bid + 1 ))
+		bidstr=`printf "%02d" $bid_num`
 		if [ ! -f "${WDIR}/MOM-${bidstr}.done" ] ; then
 			JOBNAME="${this_date_print}-${CYCLE_ID}-${bidstr}"
 			job_script_name="run_mom.${bidstr}.sh"
-			cat ${WDIR}/run_mom.sh | sed "s|MEM1_INPUT|\"${MEM1}\"|" | sed "s|bidstr_INPUT|\"${bidstr}\"|" | sed "s|JOBNAME_INPUT|\"${JOBNAME}\"|" > ${WDIR}/${job_script_name}
+			cat ${WDIR}/run_mom.sh \
+				| sed "s|MEM1_INPUT|\"${MEM1}\"|"\
+				| sed "s|MONTHS_INPUT|${NUM_MONTHS}|"\
+			       	| sed "s|JOBNAME_INPUT|\"${JOBNAME}\"|"\
+			       	> ${WDIR}/${job_script_name}
 			if [ "${queue}" = "pbs" ] ; then
 				jobid[$bid]=`qsub ${job_script_name}`
 			elif [ "${queue}" = "slurm" ] ; then

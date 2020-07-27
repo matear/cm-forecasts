@@ -213,6 +213,7 @@ echo "starting propagation in cycle $CYCLE_ID. DATE=" `date`
                 | sed "s|ENSSIZE|${ENSSIZE}|"\
                 | sed "s|DT_INPUT|\"${DT}\"|"\
                 | sed "s|WDIR_INPUT|\"${WDIR}\"|"\
+                | sed "s|SAVE_EXP_DIR_INPUT|\"${SAVE_EXP_DIR}\"|"\
                 | sed "s|CYCLE_ID_INPUT|\"${CYCLE_ID}\"|"\
                 | sed "s|MOM_COMMAND_INPUT|${MOM_COMMAND}|"\
                 >> ${WDIR}/run_mom.sh

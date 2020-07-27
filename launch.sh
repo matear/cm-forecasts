@@ -15,6 +15,7 @@ RUNSCRIPTNAME=run_${SYSTEMNAME}_forecasts.sh
 set -eu
 CWD=`pwd`
 mkdir -p $WDIR
+mkdir -p $SAVE_EXP_DIR
 
 if [ ! -f "${WDIR}/JULDAY.txt" ] ; then
     echo $JULDAY > ${WDIR}/JULDAY.txt

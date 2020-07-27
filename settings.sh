@@ -3,11 +3,52 @@
 #=======================================================================
 DESCRIPTION='CAFE-60 forecasts'
 
-ENSSIZE=2
-FORECAST_CYCLE_LEN_IN_YEARS=1
-#ENSSIZE=96
-#FORECAST_CYCLE_LEN_IN_YEARS=10
-this_date=" 2017 11 1"
+ENSSIZE=96
+FORECAST_CYCLE_LEN_IN_YEARS=10
+#this_date=" 2010  2 1"
+#this_date=" 2010  5 1"
+#this_date=" 2010  8 1"
+#this_date=" 2010 11 1" 
+#this_date=" 2011  2 1"
+#this_date=" 2011  5 1"
+#this_date=" 2011  8 1"
+#this_date=" 2011 11 1"
+#this_date=" 2012  2 1"
+#this_date=" 2012  5 1"
+#this_date=" 2012  8 1"
+#this_date=" 2012 11 1"
+#this_date=" 2013  2 1"
+#this_date=" 2013  5 1"
+#this_date=" 2013  8 1"
+#this_date=" 2013 11 1" 
+#this_date=" 2014  2 1"
+#this_date=" 2014  5 1"
+#this_date=" 2014  8 1"
+#this_date=" 2014 11 1" 
+#this_date=" 2015  2 1"
+#this_date=" 2015  5 1"
+#this_date=" 2015  8 1"
+#this_date=" 2015 11 1"  
+#this_date=" 2016  2 1"
+#this_date=" 2016  5 1"
+#this_date=" 2016  8 1"
+#this_date=" 2016 11 1" 
+#this_date=" 2017  2 1"
+#this_date=" 2017  5 1"
+#this_date=" 2017  8 1"
+#this_date=" 2017 11 1"  # in progress
+#this_date=" 2018  2 1"
+#this_date=" 2018  5 1"
+this_date=" 2018  8 1"
+#this_date=" 2019 11 1"  # in progress
+#this_date=" 2019  2 1"
+#this_date=" 2019  5 1"
+#this_date=" 2019  8 1"
+#this_date=" 2019 11 1" 
+#this_date=" 2020  2 1"
+#this_date=" 2020  5 1"
+#this_date=" 2020  8 1"
+#this_date=" 2020 11 1" 
 JULBASE="1800 1 1"
 
 #=======================================================================

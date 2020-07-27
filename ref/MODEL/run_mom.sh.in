@@ -80,12 +80,11 @@ fi
 #====================================================================
 if [ ! -f "NETCDF_COMBINE.done" ]; then
         ./merge.sh
-        num_not_combined=`ls *.nc.* | wc -l`
-        if (( num_not_combined == 0 )) ; then
-                touch NETCDF_COMBINE.done
-        else
+        if  stat -t *.nc.* >/dev/null 2>&1 ; then
                 touch NETCDF_COMBINE.failed
                 exit
+        else
+                touch NETCDF_COMBINE.done
         fi
 fi
 
@@ -102,20 +101,40 @@ if [ -f "NETCDF_COMBINE.done" ]; then
 fi
 
 #====================================================================
+# Set up stripping of ZARR output directory
+STRIPE_COUNT=60
+if [ ! -d $ZARR_OUTPUT_PATH ]; then 
+        mkdir $ZARR_OUTPUT_PATH
+        lfs setstripe --stripe-count $STRIPE_COUNT --stripe-size 1M $ZARR_OUTPUT_PATH
+elif (( `lfs getstripe -d $ZARR_OUTPUT_PATH | grep -oP "stripe_count:\s+\K[0-9]+"` != $STRIPE_COUNT )); then
+        echo "$ZARR_OUTPUT_PATH exists but is not striped correctly"
+        exit
+fi
+
+#====================================================================
 # Launch Zarring scripts
-mkdir -p $ZARR_OUTPUT_PATH
 if [ -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.done" ]; then
                 cp -v ${POSTPROCESSING_SRCDIR}/$ZARR_CONFIG_FILE .
                 OUTPUT_DIR=${ZARR_OUTPUT_PATH}/${memstr}
+
                 # Create zarr collections on node local storage -----
                 jobfs_path=${PBS_JOBFS}/ZARR
                 python ${POSTPROCESSING_SRCDIR}/convert_forecast_to_zarr.py ${WDIR} ${jobfs_path} -r "all" -e $mem -c $ZARR_CONFIG_FILE --zip_output \
                     > ${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.progress 2>&1
+
                 # Copy zips to zarr_path -----
                 echo "Copying collections to ${OUTPUT_DIR}..." >>${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.progress
-                mkdir -p $OUTPUT_DIR
+		STRIPE_COUNT=30
+		if [ ! -d $OUTPUT_DIR ]; then
+		        mkdir $OUTPUT_DIR
+		        lfs setstripe --stripe-count $STRIPE_COUNT --stripe-size 1M $OUTPUT_DIR
+		elif (( `lfs getstripe -d $OUTPUT_DIR | grep -oP "stripe_count:\s+\K[0-9]+"` != $STRIPE_COUNT )); then
+		        echo "$OUTPUT_DIR exists but is not striped correctly"
+		        exit
+		fi
                 cp ${jobfs_path}/*.zarr.zip $OUTPUT_DIR >>${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.progress 2>&1
+
                 touch ${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.done
         fi
 fi
@@ -129,6 +148,7 @@ if (( num_complete == ENSSIZE )) ; then
         exclude_realms=( ) # realms not to merge (e.g. if already done)
         all_realms=$(python ${POSTPROCESSING_SRCDIR}/parse_realms.py < "$ZARR_CONFIG_FILE")
         remaining_realms=( `echo ${all_realms[@]} ${realms_as_separate_jobs[@]} ${exclude_realms[@]} | tr ' ' '\n' | sort | uniq -u` )
+	cp -v ${POSTPROCESSING_SRCDIR}/merge_zarr_members.py .
         for realm in ${realms_as_separate_jobs[@]}; do
                 if [ ! -f "${POSTPROCESSING_LOGDIR}/MERGE_${realm}.done" ]; then
                         qsub -v "paths_to_merge=$(echo ${paths_to_merge[@]}), zarr_path=${ZARR_OUTPUT_PATH}, realms=$realm, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, LOG_DIR=$POSTPROCESSING_LOGDIR" ${POSTPROCESSING_SRCDIR}/run_merge_members_Gadi.sh

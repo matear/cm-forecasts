@@ -22,6 +22,7 @@ ZARR_PATH=ZARR_PATH_INPUT
 ZARR_CONFIG_FILE=zarr_specs_CAFE-f6.json
 ZARR_OUTPUT_PATH=${SAVE_EXP_DIR}/ZARR
 POSTPROCESSING_LOGDIR=../postprocessing_logs
+CHECK_CONFIG_FILE=check_specs.json
 
 JULDAY=`cat ${WDIR}/JULDAY.txt | head -1`
 
@@ -79,13 +80,15 @@ if [ ! -f "MOM.done" ]; then
 fi
 
 #====================================================================
-if [ ! -f "NETCDF_COMBINE.done" ]; then
-        ./merge.sh
-        if  stat -t *.nc.* >/dev/null 2>&1 ; then
-                touch NETCDF_COMBINE.failed
-                exit
-        else
-                touch NETCDF_COMBINE.done
+if [ -f "MOM.done" ]; then
+	if [ ! -f "NETCDF_COMBINE.done" ]; then
+        	./merge.sh
+	        if  stat -t *.nc.* >/dev/null 2>&1 ; then
+        	        touch NETCDF_COMBINE.failed
+                	exit
+	        else
+        	        touch NETCDF_COMBINE.done
+        	fi
         fi
 fi
 
@@ -98,11 +101,15 @@ if [ -f "NETCDF_COMBINE.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
                 ${POSTPROCESSING_SRCDIR}/convert_forecast_to_isobaric_Gadi.sh ./
                 touch ${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done
+
+		#-------------------------------------------
+		# How can we detect if this step failed??
+		#-------------------------------------------
         fi
 fi
 
 #====================================================================
-# Set up stripping of ZARR output directory
+# Set up striping of ZARR output directory
 STRIPE_COUNT=60
 if [ ! -d $ZARR_OUTPUT_PATH ]; then 
         mkdir $ZARR_OUTPUT_PATH
@@ -113,7 +120,7 @@ elif (( `lfs getstripe -d $ZARR_OUTPUT_PATH | grep -oP "stripe_count:\s+\K[0-9]+
 fi
 
 #====================================================================
-# Launch Zarring scripts
+# Launch zarring scripts
 if [ -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.done" ]; then
                 cp -v ${POSTPROCESSING_SRCDIR}/$ZARR_CONFIG_FILE .
@@ -137,12 +144,35 @@ if [ -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
                 cp ${jobfs_path}/*.zarr.zip $OUTPUT_DIR >>${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.progress 2>&1
 
                 touch ${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.done
+
+		#-------------------------------------------
+		# How can we detect if this step failed??
+		#-------------------------------------------
         fi
 fi
 
+
+#====================================================================
+# Launch checking scripts
+if [ -f "${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.done" ]; then
+        if [ ! -f "${POSTPROCESSING_LOGDIR}/CHECK_${memstr}.done" ]; then
+                cp -v ${POSTPROCESSING_SRCDIR}/$CHECK_CONFIG_FILE .
+                export PP_ZARR_PATH=$OUTPUT_DIR
+                export PP_CONFIG_PATH=$CHECK_CONFIG_FILE
+                python ${POSTPROCESSING_SRCDIR}/tests/test_zarr.py > ${POSTPROCESSING_LOGDIR}/CHECK_${memstr}.progress 2>&1
+                status=$?
+                if (( "$status" == "0" )); then
+                	touch ${POSTPROCESSING_LOGDIR}/CHECK_${memstr}.done
+		else
+                	touch ${POSTPROCESSING_LOGDIR}/CHECK_${memstr}.failed
+                fi
+        fi
+fi
+
+
 #====================================================================
 # Check if all zarring completed
-num_complete=`ls ${POSTPROCESSING_LOGDIR}/ZARR_*.done | wc -l`
+num_complete=`ls ${POSTPROCESSING_LOGDIR}/CHECK_*.done | wc -l`
 if (( num_complete == ENSSIZE )) ; then
         paths_to_merge=( `ls -d ${ZARR_OUTPUT_PATH}/mem???` )
         realms_as_separate_jobs=( atmos_daily atmos_isobaric_daily ocean_month ocean_bgc_month ) # all realms not specified here will be lumped into single additional job
@@ -158,7 +188,11 @@ if (( num_complete == ENSSIZE )) ; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/MERGE_${remaining_realms%% *}.done" ]; then
                 qsub -v "paths_to_merge=$(echo ${paths_to_merge[@]}), zarr_path=${ZARR_OUTPUT_PATH}, realms=$(echo ${remaining_realms[@]}), ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, LOG_DIR=$POSTPROCESSING_LOGDIR" ${POSTPROCESSING_SRCDIR}/run_merge_members_Gadi.sh
         fi
+		#-------------------------------------------
+		# How can we detect if this step failed??
+		#-------------------------------------------
 fi
+
 
 #====================================================================
 # EOF

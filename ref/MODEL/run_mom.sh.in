@@ -123,10 +123,10 @@ fi
 
 #====================================================================
 # Launch zarring scripts
+OUTPUT_DIR=${ZARR_OUTPUT_PATH}/${memstr}
 if [ -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.done" ]; then
                 cp -v ${POSTPROCESSING_SRCDIR}/$ZARR_CONFIG_FILE .
-                OUTPUT_DIR=${ZARR_OUTPUT_PATH}/${memstr}
 
                 # Create zarr collections on node local storage -----
                 jobfs_path=${PBS_JOBFS}/ZARR

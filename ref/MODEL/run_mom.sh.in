@@ -56,27 +56,29 @@ if [ ! -f "MOM.done" ]; then
 
 	# Checck for successful completion
 	set -e
-	if  stat -t *.nc.0000 >/dev/null 2>&1 ; then
-		echo "full success"
+        mom_complete_flag=`tail -n1 mom-${DT}.out | grep 'MPP_STACK high water mark=' | grep '0' | wc -l`
+        if (( mom_complete_flag == 1 )) ; then
+                echo "full success"
+
+                # backup input files
+                mkdir -p INPUT_SAVE
+                files=`ls INPUT/*.res.nc*`
+                for file in $files ; do
+                        if [ -f "$file" ] ; then
+                                mv $file INPUT_SAVE
+                        fi
+                done
+                mv -f RESTART/* INPUT
+                rm -f INPUT/????????.??0000.*.nc
+                rm -f INPUT/????????.??0000.*.res
+
+                touch MOM.done
+
 	else
 		echo "mom-${CYCLE_ID}-MOM (member $mem) failed, bailing out"
 		touch MOM.failed
 		exit
 	fi
-
-	# backup input files
-	mkdir -p INPUT_SAVE 
-	files=`ls INPUT/*.res.nc*`
-	for file in $files ; do
-		if [ -f "$file" ] ; then
-	        	mv $file INPUT_SAVE
-		fi
-	done
-	mv -f RESTART/* INPUT
-	rm -f INPUT/????????.??0000.*.nc
-	rm -f INPUT/????????.??0000.*.res
-
-	touch MOM.done
 fi
 
 #====================================================================

@@ -144,6 +144,8 @@ if [ -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
 		        exit
 		fi
                 cp ${jobfs_path}/*.zarr.zip $OUTPUT_DIR >>${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.progress 2>&1
+		
+		chmod 775 $OUTPUT_DIR/*.zip
 
                 touch ${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.done
 

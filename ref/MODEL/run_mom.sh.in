@@ -161,7 +161,7 @@ if [ -f "${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.done" ]; then
                 cp -v ${POSTPROCESSING_SRCDIR}/$CHECK_CONFIG_FILE .
                 export PP_ZARR_PATH=$OUTPUT_DIR
                 export PP_CONFIG_PATH=$CHECK_CONFIG_FILE
-                python ${POSTPROCESSING_SRCDIR}/tests/test_zarr.py > ${POSTPROCESSING_LOGDIR}/CHECK_${memstr}.progress 2>&1
+		pytest -v ${POSTPROCESSING_SRCDIR}/tests/test_zarr.py > ${POSTPROCESSING_LOGDIR}/CHECK_${memstr}.progress 2>&1
                 status=$?
                 if (( "$status" == "0" )); then
                 	touch ${POSTPROCESSING_LOGDIR}/CHECK_${memstr}.done

@@ -183,20 +183,22 @@ if (( num_complete == ENSSIZE )) ; then
         exclude_realms=( ) # realms not to merge (e.g. if already done)
         all_realms=$(python ${POSTPROCESSING_SRCDIR}/parse_realms.py < "$ZARR_CONFIG_FILE")
         remaining_realms=( `echo ${all_realms[@]} ${realms_as_separate_jobs[@]} ${exclude_realms[@]} | tr ' ' '\n' | sort | uniq -u` )
-	cp -v ${POSTPROCESSING_SRCDIR}/merge_zarr_members.py .
+        cp -v ${POSTPROCESSING_SRCDIR}/merge_zarr_members.py .
+        cp -v ${POSTPROCESSING_SRCDIR}/$CHECK_CONFIG_FILE .
+        cp -v ${POSTPROCESSING_SRCDIR}/tests/test_zarr.py .
+        n_merge_jobs=$((${#realms_as_separate_jobs[@]} + 1))
         for realm in ${realms_as_separate_jobs[@]}; do
                 if [ ! -f "${POSTPROCESSING_LOGDIR}/MERGE_${realm}.done" ]; then
-                        qsub -v "paths_to_merge=$(echo ${paths_to_merge[@]}), zarr_path=${ZARR_OUTPUT_PATH}, realms=$realm, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, LOG_DIR=$POSTPROCESSING_LOGDIR" ${POSTPROCESSING_SRCDIR}/run_merge_members_Gadi.sh
+                        qsub -v "paths_to_merge=$(echo ${paths_to_merge[@]}), zarr_path=${ZARR_OUTPUT_PATH}, realms=$realm, n_merge_jobs=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, LOG_DIR=$POSTPROCESSING_LOGDIR" ${POSTPROCESSING_SRCDIR}/run_merge_members_Gadi.sh
                 fi
         done
         if [ ! -f "${POSTPROCESSING_LOGDIR}/MERGE_${remaining_realms%% *}.done" ]; then
-                qsub -v "paths_to_merge=$(echo ${paths_to_merge[@]}), zarr_path=${ZARR_OUTPUT_PATH}, realms=$(echo ${remaining_realms[@]}), ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, LOG_DIR=$POSTPROCESSING_LOGDIR" ${POSTPROCESSING_SRCDIR}/run_merge_members_Gadi.sh
+                qsub -v "paths_to_merge=$(echo ${paths_to_merge[@]}), zarr_path=${ZARR_OUTPUT_PATH}, realms=$(echo ${remaining_realms[@]}), n_merge_jobs=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, LOG_DIR=$POSTPROCESSING_LOGDIR" ${POSTPROCESSING_SRCDIR}/run_merge_members_Gadi.sh
         fi
 		#-------------------------------------------
 		# How can we detect if this step failed??
 		#-------------------------------------------
 fi
-
 
 #====================================================================
 # EOF

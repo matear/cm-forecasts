@@ -29,18 +29,31 @@ JULDAY=`cat ${WDIR}/JULDAY.txt | head -1`
 memstr=`printf "mem%03d" $mem`
 cd ${WDIR}/$memstr
 
+mkdir -p $POSTPROCESSING_LOGDIR
+
+
 #====================================================================
 # Check previous failures have been cleaned up
-if [ -f "MOM.failed" ]; then
-	exit
-fi
+for prefix in MOM NETCDF_COMBINE CHECK; do
+	if [ -f "${POSTPROCESSING_LOGDIR}/${prefix}_${memstr}.failed" ]; then
+		echo Clean up $prefix for member $mem
+		exit
+	fi
+done
 
-if [ -f "NETCDF_COMBINE.failed" ]; then
-	exit
-fi
+#-------------------------------------------
+# Need .failed files for REGRID_${memstr}, ZARR_${memstr}, MERGE_${realm}
+#-------------------------------------------
+
+for prefix in CHECK_MERGE; do
+	if [ -f "${POSTPROCESSING_LOGDIR}/${prefix}.failed" ]; then
+		echo Clean up $prefix
+		exit
+	fi
+done
 
 #====================================================================
-if [ ! -f "MOM.done" ]; then
+if [ ! -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
 	# Build namelist
 	set +e
 	rm -f input.nml
@@ -72,24 +85,24 @@ if [ ! -f "MOM.done" ]; then
                 rm -f INPUT/????????.??0000.*.nc
                 rm -f INPUT/????????.??0000.*.res
 
-                touch MOM.done
+                touch ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done
 
 	else
 		echo "mom-${CYCLE_ID}-MOM (member $mem) failed, bailing out"
-		touch MOM.failed
+		touch ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.failed
 		exit
 	fi
 fi
 
 #====================================================================
-if [ -f "MOM.done" ]; then
-	if [ ! -f "NETCDF_COMBINE.done" ]; then
+if [ -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
+	if [ ! -f "${POSTPROCESSING_LOGDIR}/NETCDF_COMBINE_${memstr}.done" ]; then
         	./merge.sh
 	        if  stat -t *.nc.* >/dev/null 2>&1 ; then
-        	        touch NETCDF_COMBINE.failed
+        	        touch ${POSTPROCESSING_LOGDIR}/NETCDF_COMBINE_${memstr}.failed
                 	exit
 	        else
-        	        touch NETCDF_COMBINE.done
+        	        touch ${POSTPROCESSING_LOGDIR}/NETCDF_COMBINE_${memstr}.done
         	fi
         fi
 fi
@@ -98,8 +111,7 @@ fi
 # Launch Regridding scripts
 export PATH="${PYTHON}:${PYTHON}/bin:${PATH}"
 export PYTHONPATH="${PYTHONPATH}:${ZARR_PATH}"
-mkdir -p $POSTPROCESSING_LOGDIR
-if [ -f "NETCDF_COMBINE.done" ]; then
+if [ -f ${POSTPROCESSING_LOGDIR}/"NETCDF_COMBINE_${memstr}.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
                 ${POSTPROCESSING_SRCDIR}/convert_forecast_to_isobaric_Gadi.sh ./
                 touch ${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done
@@ -196,7 +208,7 @@ if (( num_complete == ENSSIZE )) ; then
                 qsub -v "paths_to_merge=$(echo ${paths_to_merge[@]}), zarr_path=${ZARR_OUTPUT_PATH}, realms=$(echo ${remaining_realms[@]}), n_merge_jobs=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, LOG_DIR=$POSTPROCESSING_LOGDIR" ${POSTPROCESSING_SRCDIR}/run_merge_members_Gadi.sh
         fi
 		#-------------------------------------------
-		# How can we detect if this step failed??
+		# How can we detect if merge realms failed??
 		#-------------------------------------------
 fi
 

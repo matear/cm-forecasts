@@ -27,10 +27,33 @@ CHECK_CONFIG_FILE=check_specs.json
 JULDAY=`cat ${WDIR}/JULDAY.txt | head -1`
 
 memstr=`printf "mem%03d" $mem`
-cd ${WDIR}/$memstr
 
+# Set up Github messages
+GITHUB_MESSAGE_DIR=../github_messages
+mkdir -p $GITHUB_MESSAGE_DIR
 mkdir -p $POSTPROCESSING_LOGDIR
 
+
+#====================================================================
+# Small wrapper to make messaging simpler
+github_message(){
+
+        # Get user-provided stage and status information
+        stage=$1
+        status=$2
+
+        # Execute
+        python $POSTPROCESSING_SRCDIR/message.py \
+        $GITHUB_MESSAGE_DIR \
+        $EXPNAME/$memstr \
+        $WDIR \
+        $stage \
+        $status
+
+        # TODO: Provide a -m (message) option for errors?
+}
+
+cd ${WDIR}/$memstr
 
 #====================================================================
 # Check previous failures have been cleaned up
@@ -65,6 +88,7 @@ if [ ! -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
 	       	> input.nml
 
 	# Launch MOM job
+	github_message forecast start
 	MOM_COMMAND_INPUT ./EXEC  2>&1 | tee mom-${DT}.out
 
 	# Checck for successful completion
@@ -86,10 +110,12 @@ if [ ! -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
                 rm -f INPUT/????????.??0000.*.res
 
                 touch ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done
+		github_message forecast success
 
 	else
 		echo "mom-${CYCLE_ID}-MOM (member $mem) failed, bailing out"
 		touch ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.failed
+		github_message forecast fail
 		exit
 	fi
 fi
@@ -100,9 +126,11 @@ if [ -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
         	./merge.sh
 	        if  stat -t *.nc.* >/dev/null 2>&1 ; then
         	        touch ${POSTPROCESSING_LOGDIR}/NETCDF_COMBINE_${memstr}.failed
+			github_message merge_netcdf start
                 	exit
 	        else
         	        touch ${POSTPROCESSING_LOGDIR}/NETCDF_COMBINE_${memstr}.done
+			github_message merge_netcdf success
         	fi
         fi
 fi
@@ -113,11 +141,16 @@ export PATH="${PYTHON}:${PYTHON}/bin:${PATH}"
 export PYTHONPATH="${PYTHONPATH}:${ZARR_PATH}"
 if [ -f ${POSTPROCESSING_LOGDIR}/"NETCDF_COMBINE_${memstr}.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
+		github_message regridding start
                 ${POSTPROCESSING_SRCDIR}/convert_forecast_to_isobaric_Gadi.sh ./
                 touch ${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done
+		github_message regridding success
 
 		#-------------------------------------------
-		# How can we detect if this step failed??
+		# How can we detect if regrid failed?
+		#-------------------------------------------
+		# When we can, run the following to tell github
+                # github_message regridding fail
 		#-------------------------------------------
         fi
 fi
@@ -138,6 +171,8 @@ fi
 OUTPUT_DIR=${ZARR_OUTPUT_PATH}/${memstr}
 if [ -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.done" ]; then
+		github_message zarring start
+
                 cp -v ${POSTPROCESSING_SRCDIR}/$ZARR_CONFIG_FILE .
 
                 # Create zarr collections on node local storage -----
@@ -160,9 +195,13 @@ if [ -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
 		chmod 775 $OUTPUT_DIR/*.zip
 
                 touch ${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.done
+		github_message zarring success
 
 		#-------------------------------------------
-		# How can we detect if this step failed??
+		# How can we detect if ZARR failed?
+		#-------------------------------------------
+		# When we can, runt the following to tell github
+                # github_message zarring fail
 		#-------------------------------------------
         fi
 fi
@@ -172,6 +211,7 @@ fi
 # Launch checking scripts
 if [ -f "${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/CHECK_${memstr}.done" ]; then
+		github_message error_checking start
                 cp -v ${POSTPROCESSING_SRCDIR}/$CHECK_CONFIG_FILE .
                 export PP_ZARR_PATH=$OUTPUT_DIR
                 export PP_CONFIG_PATH=$CHECK_CONFIG_FILE
@@ -179,8 +219,10 @@ if [ -f "${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.done" ]; then
                 status=$?
                 if (( "$status" == "0" )); then
                 	touch ${POSTPROCESSING_LOGDIR}/CHECK_${memstr}.done
+			github_message error_checking success
 		else
                 	touch ${POSTPROCESSING_LOGDIR}/CHECK_${memstr}.failed
+			github_message error_checking fail
                 fi
         fi
 fi
@@ -207,9 +249,9 @@ if (( num_complete == ENSSIZE )) ; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/MERGE_${remaining_realms%% *}.done" ]; then
                 qsub -v "paths_to_merge=$(echo ${paths_to_merge[@]}), zarr_path=${ZARR_OUTPUT_PATH}, realms=$(echo ${remaining_realms[@]}), n_merge_jobs=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, LOG_DIR=$POSTPROCESSING_LOGDIR" ${POSTPROCESSING_SRCDIR}/run_merge_members_Gadi.sh
         fi
-		#-------------------------------------------
-		# How can we detect if merge realms failed??
-		#-------------------------------------------
+	#-------------------------------------------
+	# How can we detect if merge realms failed??
+	#-------------------------------------------
 fi
 
 #====================================================================

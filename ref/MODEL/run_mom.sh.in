@@ -21,15 +21,15 @@ POSTPROCESSING_SRCDIR=POSTPROCESSING_SRCDIR_INPUT
 ZARR_PATH=ZARR_PATH_INPUT
 ZARR_CONFIG_FILE=zarr_specs_CAFE-f6.json
 ZARR_OUTPUT_PATH=${SAVE_EXP_DIR}/ZARR
-POSTPROCESSING_LOGDIR=../postprocessing_logs
+POSTPROCESSING_LOGDIR=${WDIR}/postprocessing_logs
+GITHUB_MESSAGE_DIR=${WDIR}/github_messages
 CHECK_CONFIG_FILE=check_specs.json
 
 JULDAY=`cat ${WDIR}/JULDAY.txt | head -1`
-
+EXPNAME=`basename ${WDIR}`
 memstr=`printf "mem%03d" $mem`
 
-# Set up Github messages
-GITHUB_MESSAGE_DIR=../github_messages
+# Make status logging directories
 mkdir -p $GITHUB_MESSAGE_DIR
 mkdir -p $POSTPROCESSING_LOGDIR
 

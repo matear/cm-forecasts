@@ -3,8 +3,12 @@
 #=======================================================================
 DESCRIPTION='CAFE-60 forecasts'
 
+#ENSSIZE=2
+#FORECAST_CYCLE_LEN_IN_YEARS=1
+
 ENSSIZE=96
 FORECAST_CYCLE_LEN_IN_YEARS=10
+
 #this_date=" 2010  2 1"
 #this_date=" 2010  5 1"
 #this_date=" 2010  8 1"
@@ -12,19 +16,19 @@ FORECAST_CYCLE_LEN_IN_YEARS=10
 #this_date=" 2011  2 1"
 #this_date=" 2011  5 1"
 #this_date=" 2011  8 1"
-#this_date=" 2011 11 1"
+this_date=" 2011 11 1"
 #this_date=" 2012  2 1"
 #this_date=" 2012  5 1"
 #this_date=" 2012  8 1"
-#this_date=" 2012 11 1"
+#this_date=" 2012 11 1"  # in progress
 #this_date=" 2013  2 1"
 #this_date=" 2013  5 1"
 #this_date=" 2013  8 1"
-#this_date=" 2013 11 1" 
+#this_date=" 2013 11 1"  # complete
 #this_date=" 2014  2 1"
 #this_date=" 2014  5 1"
 #this_date=" 2014  8 1"
-this_date=" 2014 11 1" 
+#this_date=" 2014 11 1"  # complete
 #this_date=" 2015  2 1"
 #this_date=" 2015  5 1"
 #this_date=" 2015  8 1"

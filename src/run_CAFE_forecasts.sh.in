@@ -26,6 +26,7 @@ echo "Reading input parameters, setting dates and save directories. Date= "`date
 	(( FORECAST_CYCLE_LEN_IN_MONTHS = FORECAST_CYCLE_LEN_IN_YEARS * 12 ))
 
 	MOMINPUT_DIR=${WDIR}/MOM/INPUT
+	POSTPROCESSING_LOGDIR=${WDIR}/postprocessing_logs
 
 	# the analysis day of the current cycle ("_CA")
 	JULDAY_CA=`cat ${WDIR}/JULDAY.txt | head -1`
@@ -125,6 +126,13 @@ if [ ! -d "${WDIR}/mem000"  ] ; then
 				| sed "s|INPUT_MONTH|${M_CA}|"\
 				| sed "s|INPUT_DAY|${D_CA}|"\
 				> ${WDIR}/${memstr}/INPUT/coupler.res
+
+			# This was necessary in the DA system. Perhaps not here.
+			nccopy -u ${WDIR}/${memstr}/INPUT/fv_rst.res.nc ${WDIR}/${memstr}/INPUT/fv_rst.res.nc2 
+			mv ${WDIR}/${memstr}/INPUT/fv_rst.res.nc2 ${WDIR}/${memstr}/INPUT/fv_rst.res.nc   
+			nccopy -u ${WDIR}/${memstr}/INPUT/atmos_tracers.res.nc ${WDIR}/${memstr}/INPUT/atmos_tracers.res.nc2 
+			mv ${WDIR}/${memstr}/INPUT/atmos_tracers.res.nc2 ${WDIR}/${memstr}/INPUT/atmos_tracers.res.nc
+
 			) &
 		done
 		wait
@@ -179,26 +187,6 @@ echo "Building namelist. DATE=" `date`
 
 #=======================================================================
 echo "Starting model propagation. DATE=" `date` 
-	date
-	cd ${WDIR}
-	for (( mem1 = 0; mem1 <= ENSSIZE; mem1 += NP_MASTER )) ; do
-		(( mem2 = mem1 + NP_MASTER - 1 ))
-		if (( $mem2 > $ENSSIZE )) ; then
-			mem2=$ENSSIZE
-		fi
-		for (( mem = mem1; mem <= mem2; ++mem )) ; do
-			(
-			set -eu
-			memstr=`printf "mem%03d" $mem`
-			nccopy -u ${WDIR}/${memstr}/INPUT/fv_rst.res.nc ${WDIR}/${memstr}/INPUT/fv_rst.res.nc2 
-			mv ${WDIR}/${memstr}/INPUT/fv_rst.res.nc2 ${WDIR}/${memstr}/INPUT/fv_rst.res.nc   
-			nccopy -u ${WDIR}/${memstr}/INPUT/atmos_tracers.res.nc ${WDIR}/${memstr}/INPUT/atmos_tracers.res.nc2 
-			mv ${WDIR}/${memstr}/INPUT/atmos_tracers.res.nc2 ${WDIR}/${memstr}/INPUT/atmos_tracers.res.nc
-			) &
-		done
-		wait
-	done
-
 	# write MOM script
 	cd $WDIR
 	cp -f $HEADER_MOM ${WDIR}/run_mom.sh
@@ -206,6 +194,7 @@ echo "Starting model propagation. DATE=" `date`
                 | sed "s|PYTHON_INPUT|${PYTHON}|"\
                 | sed "s|ZARR_PATH_INPUT|${ZARR_PATH}|"\
                 | sed "s|POSTPROCESSING_SRCDIR_INPUT|${POSTPROCESSING_SRCDIR}|"\
+                | sed "s|POSTPROCESSING_LOGDIR_INPUT|${POSTPROCESSING_LOGDIR}|"\
                 | sed "s|EXEC|${EXECNAME}|"\
                 | sed "s|ENSSIZE|${ENSSIZE}|"\
                 | sed "s|DT_INPUT|\"${DT}\"|"\
@@ -217,30 +206,34 @@ echo "Starting model propagation. DATE=" `date`
 	# launch jobs
 	for (( mem = 0; mem <= ENSSIZE; ++mem )) ; do
 		numstr=`printf "%03d" $mem`
-		JOBNAME="${this_date_print}-${numstr}"
-		job_script_name="run_mom.${numstr}.sh"
-		cat ${WDIR}/run_mom.sh \
+		memstr='mem'$numstr
+		if [ ! -f ${POSTPROCESSING_LOGDIR}/CHECK_${memstr}.done ] ; then
+			JOBNAME="${this_date_print}-${numstr}"
+			job_script_name="run_mom.${numstr}.sh"
+			cat ${WDIR}/run_mom.sh \
 			| sed "s|MEM1_INPUT|\"${mem}\"|"\
-			| sed "s|MONTHS_INPUT|${FORECAST_CYCLE_LEN_IN_MONTHS}|"\
-		       	| sed "s|JOBNAME_INPUT|\"${JOBNAME}\"|"\
-		       	> ${WDIR}/${job_script_name}
-		if [ "${queue}" = "pbs" ] ; then
-			qsub ${job_script_name}
-		elif [ "${queue}" = "slurm" ] ; then
-			sbatch ${job_script_name} 
-		else
-			echo 'Unsupported queing system'
-			exit
+				| sed "s|MONTHS_INPUT|${FORECAST_CYCLE_LEN_IN_MONTHS}|"\
+			       	| sed "s|JOBNAME_INPUT|\"${JOBNAME}\"|"\
+			       	> ${WDIR}/${job_script_name}
+			if [ "${queue}" = "pbs" ] ; then
+				qsub ${job_script_name}
+			elif [ "${queue}" = "slurm" ] ; then
+				sbatch ${job_script_name} 
+			else
+				echo 'Unsupported queing system'
+				exit
+			fi
 		fi
 	done
 
 	echo -n "   All MOM jobs launched"
 
-
 #=======================================================================
-        tar -cvf ${SAVE_EXP_DIR}/base.tar $WDIR/*.* $WDIR/MOM $WDIR/ref $WDIR/src $WDIR/20*
-        touch ${POSTPROCESSING_LOGDIR}/TARR_base.done
-	echo -n "   Tarring of base files complete."
+	if [ ! -f ${POSTPROCESSING_LOGDIR}/TARR_base.done ] ; then
+	        tar -cvf ${SAVE_EXP_DIR}/base.tar $WDIR/*.* $WDIR/MOM $WDIR/ref $WDIR/src $WDIR/20*
+        	touch ${POSTPROCESSING_LOGDIR}/TARR_base.done
+		echo -n "   Tarring of base files complete."
+	fi
 
 
 #=======================================================================

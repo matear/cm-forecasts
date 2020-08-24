@@ -18,19 +18,18 @@ mkdir -p $WDIR
 mkdir -p $SAVE_EXP_DIR
 
 if [ ! -f "${WDIR}/JULDAY.txt" ] ; then
-    echo $JULDAY > ${WDIR}/JULDAY.txt
+	echo $JULDAY > ${WDIR}/JULDAY.txt
+	git log | head -n1 > $WDIR/cm-forecast.version.txt
+	cd $MOM_SRC_DIR ; git log | head -n1 > $WDIR/mom_cafe.version.txt ; cd $CWD
+	$dn2date $JULDAY $JULBASE > $WDIR/experiment_start_date.txt
 fi
-
-git log | head -n1 > $WDIR/cm-forecast.version.txt
-cd $MOM_SRC_DIR ; git log | head -n1 > $WDIR/mom_cafe.version.txt ; cd $CWD
-$dn2date $JULDAY $JULBASE > $WDIR/experiment_start_date.txt
 
 echo "  running ${EXPNAME}"
 cd $WDIR
 WDIR_pwd=`pwd`
 cd $CWD
 if [ "$CWD" != "$WDIR_pwd" ] ; then
-    cp -r $0 settings.sh src ref $WDIR
+	cp -r $0 settings.sh src ref $WDIR
 fi
 
 cp src/add_meta_data.py src/add_meta_data.sh ${WDIR}
@@ -39,11 +38,11 @@ cat src/${RUNSCRIPTNAME}.in | sed "s|INPUT_NPMASTER|${NP_MASTER}|" >> ${WDIR}/${
 cd $WDIR
 
 if [ "${queue}" = "pbs" ] ; then
-    qsub -N ${this_date_print} ./${RUNSCRIPTNAME}
+	qsub -N ${this_date_print} ./${RUNSCRIPTNAME}
 elif [ "${queue}" = "slurm" ] ; then
-    sbatch -J ${this_date_print} ./${RUNSCRIPTNAME}
+	sbatch -J ${this_date_print} ./${RUNSCRIPTNAME}
 else
-    echo 'Unsupported queing system'
-    exit
+	echo 'Unsupported queing system'
+	exit
 fi
 

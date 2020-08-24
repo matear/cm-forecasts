@@ -225,9 +225,9 @@ echo "Starting model propagation. DATE=" `date`
 		       	| sed "s|JOBNAME_INPUT|\"${JOBNAME}\"|"\
 		       	> ${WDIR}/${job_script_name}
 		if [ "${queue}" = "pbs" ] ; then
-			jobid[$bid]=`qsub ${job_script_name}`
+			qsub ${job_script_name}
 		elif [ "${queue}" = "slurm" ] ; then
-			jobid[$bid]=`sbatch ${job_script_name} 2>/dev/null | tail -1 | awk '{print $4}'` || true
+			sbatch ${job_script_name} 
 		else
 			echo 'Unsupported queing system'
 			exit

@@ -102,6 +102,15 @@ EXECNAME=fms_CM2M.x
 SYSTEMNAME=CAFE
 
 #=======================================================================
+# Metadata settings
+control_name=c5
+data_assimilation_name=d60
+perturbation_name=pX
+forecast_name=f6
+contact_name="Decadal Activity 1 - Data Assimilation"
+references="O'Kane, T.J., Sandery, P.A., Monselesan, D.P., Sakov, P., Chamberlain, M.A., Matear, R.J., Collier, M., Squire, D. and Stevens, L., 2019, 'Coupled data assimilation and ensemble initialisation with application to multi-year ENSO prediction', Journal of Climate."
+
+#=======================================================================
 # Restart file locations on pearcey
 JULDAY=`$date2dn $this_date $JULBASE`
 if (( JULDAY > 73991 )) ; then
@@ -122,15 +131,6 @@ if [ ! -d "${INITENSDIR}" ] ; then
 fi
 
 #=======================================================================
-# Metadata settings
-control_name=c5
-data_assimilation_name=d60
-perturbation_name=pX
-forecast_name=f6
-contact_name="Decadal Activity 1 - Data Assimilation"
-references="O'Kane, T.J., Sandery, P.A., Monselesan, D.P., Sakov, P., Chamberlain, M.A., Matear, R.J., Collier, M., Squire, D. and Stevens, L., 2019, 'Coupled data assimilation and ensemble initialisation with application to multi-year ENSO prediction', Journal of Climate."
-
-#=======================================================================
 # System settings
 this_date_print=`$dn2date $JULDAY ${JULBASE}`
 EXPNAME=${control_name}-${data_assimilation_name}-${perturbation_name}-${forecast_name}-${this_date_print}
@@ -139,8 +139,6 @@ SAVE_EXP_DIR=${SAVE_DIR}/${EXPNAME}
 REF_DIR=${WDIR}"/ref"
 HEADER_MASTER=${REF_DIR}"/header_master."${machine}
 HEADER_MOM=${REF_DIR}"/header_mom."${machine}
-
-BATCHSIZE=1
 DT="1800"
 
 #=======================================================================

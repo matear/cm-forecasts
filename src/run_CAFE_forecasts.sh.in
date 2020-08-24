@@ -207,7 +207,6 @@ echo "Starting model propagation. DATE=" `date`
                 >> ${WDIR}/run_mom.sh
 
 	# launch jobs
-	(( NBATCHES = (ENSSIZE - 1) / BATCHSIZE + 1 ))
 	for (( mem = 0; mem <= ENSSIZE; ++mem )) ; do
 		numstr=`printf "%03d" $mem`
 		JOBNAME="${this_date_print}-${numstr}"

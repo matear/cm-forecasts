@@ -109,12 +109,14 @@ if (( JULDAY > 73991 )) ; then
 else
 	RESTART_ARCHIVE_DIR="/OSM/CBR/OA_DCFP/data5/model_output/CAFE/data_assimilation/CAFE60/short/v14/tok599/cm-runs/CAFE-60/save/RESTART_"${JULDAY}
 fi
+RESTART_ENS_MEAN_ARCHIVE_DIR="/OSM/CBR/OA_DCFP/data3/model_output/CAFE/data_assimilation/CAFE60/scratch/v14/tok599/cm-runs/CAFE-60/save/RESTART_ENS_MEAN_"${JULDAY}
 
 INITENSDIR=$INITENSDIR_BASE"/RESTART_"${JULDAY}
+INITENSDIR_ENS_MEAN=$INITENSDIR_BASE"/RESTART_ENS_MEAN_"${JULDAY}
 if [ ! -d "${INITENSDIR}" ] ; then
 	echo ""
 	echo "Run following on pearcey-dm"
-	echo "rsync -vhsrlt --chmod=Dg+s ${RESTART_ARCHIVE_DIR} ${data_mover}:${INITENSDIR_BASE}"
+	echo "rsync -vhsrlt --chmod=Dg+s ${RESTART_ENS_MEAN_ARCHIVE_DIR} ${RESTART_ARCHIVE_DIR} ${data_mover}:${INITENSDIR_BASE}"
 	echo ""
 	exit
 fi

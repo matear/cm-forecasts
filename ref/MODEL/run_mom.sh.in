@@ -9,12 +9,22 @@ export F_UFMTENDIAN=big
 
 module list
 
+#-------------------------------------------
+# Change the <DT> variable if need to reduce timestep due to numerical instability.
+DT=DT_INPUT  
+# Shorten the <months> variable if <DT> wass made smaller due to numerical instability 
+# and run time for full forecast too long to fit into maximim walltime.
+# Esnure that <months> is an integer multiple of <months_orig> so that the <NUM_CYCLES> variables is also an integer.
+months=MONTHS_INPUT
+#-------------------------------------------
+
+NUM_CYCLES=$((months_orig / months))
 WDIR=WDIR_INPUT
 SAVE_EXP_DIR=SAVE_EXP_DIR_INPUT
 CYCLE_ID=CYCLE_ID_INPUT
-months=MONTHS_INPUT
 mem=MEM1_INPUT
-DT=DT_INPUT
+months_orig=MONTHS_INPUT
+DT_orig=DT_INPUT
 
 PYTHON=PYTHON_INPUT
 POSTPROCESSING_SRCDIR=POSTPROCESSING_SRCDIR_INPUT
@@ -57,16 +67,15 @@ cd ${WDIR}/$memstr
 
 #====================================================================
 # Check previous failures have been cleaned up
+#-------------------------------------------
+# NOTE: Need .failed files for REGRID_${memstr}, ZARR_${memstr}, MERGE_${realm}
+#-------------------------------------------
 for prefix in MOM NETCDF_COMBINE CHECK; do
 	if [ -f "${POSTPROCESSING_LOGDIR}/${prefix}_${memstr}.failed" ]; then
 		echo Clean up $prefix for member $mem
 		exit
 	fi
 done
-
-#-------------------------------------------
-# Need .failed files for REGRID_${memstr}, ZARR_${memstr}, MERGE_${realm}
-#-------------------------------------------
 
 for prefix in CHECK_MERGE; do
 	if [ -f "${POSTPROCESSING_LOGDIR}/${prefix}.failed" ]; then
@@ -75,16 +84,38 @@ for prefix in CHECK_MERGE; do
 	fi
 done
 
+if [ -f ${WDIR}/STOP ] || [ -f ${WDIR}/STOP_${memstr} ] ; then
+    echo "STOP file detected, terminating"
+    exit 0
+fi
+
+
 #====================================================================
 if [ ! -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
 	# Build namelist
 	set +e
 	rm -f input.nml
+
+	if [ -f ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.progress ] ; then
+		CYCLE_ID=`cat ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.progress | head -1`
+	else
+		CYCLE_ID=0
+	fi
+
+        if (( CYCLE_ID == 0 )) ; then
+		# first MOM cycle
+	       	THUMP=.true.
+        else
+		# restart from previous MOM cycle if needed to split into two jobs
+	       	THUMP=.false.
+        fi
+
 	cat ${WDIR}/MOM/input.nml \
 		| sed "s/.*dt_ocean.*/dt_ocean = ${DT}/"\
 	       	| sed "s/.*dt_cpld.*/dt_cpld = ${DT}/"\
 	       	| sed "s/.*dt_atmos.*/dt_atmos = ${DT}/"\
 		| sed "s/INPUT_MONTHS/months = ${months}/"\
+		| sed "s/USE_HARD_THUMP/use_hard_thump=${THUMP}/"\
 	       	> input.nml
 
 	# Launch MOM job
@@ -95,7 +126,7 @@ if [ ! -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
 	set -e
         mom_complete_flag=`tail -n1 mom-${DT}.out | grep 'MPP_STACK high water mark=' | grep '0' | wc -l`
         if (( mom_complete_flag == 1 )) ; then
-                echo "full success"
+                echo "mom job complete"
 
                 # backup input files
                 mkdir -p INPUT_SAVE
@@ -109,16 +140,37 @@ if [ ! -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
                 rm -f INPUT/????????.??0000.*.nc
                 rm -f INPUT/????????.??0000.*.res
 
-                touch ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done
-		github_message forecast success
+		if (( months_orig == months )) ; then
+	                touch ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done
+			github_message forecast success
+		else
+			(( CYCLE_ID += 1 ))
+        		if (( NUM_CYCLES == CYCLE_ID )) ; then
+				rm ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.progress
+	                	touch ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done
+				github_message forecast success
+			else
+				# number of months in forecast has changed presumably due to reduced timestep size
+				echo ${CYCLE_ID} > ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.progress
+				echo "mom-${CYCLE_ID}-MOM (member $mem) in progress and requires user verification and then relaunch, bailing out."
+				github_message forecast progress
+				exit
+			fi
+		fi
 
 	else
-		echo "mom-${CYCLE_ID}-MOM (member $mem) failed, bailing out"
+		echo "mom-${CYCLE_ID}-MOM (member $mem) failed, bailing out."
 		touch ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.failed
 		github_message forecast fail
 		exit
 	fi
 fi
+
+if [ -f ${WDIR}/STOP ] || [ -f ${WDIR}/STOP_${memstr} ] ; then
+    echo "STOP file detected, terminating"
+    exit 0
+fi
+
 
 #====================================================================
 if [ -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
@@ -135,11 +187,33 @@ if [ -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
         fi
 fi
 
+if [ -f ${WDIR}/STOP ] || [ -f ${WDIR}/STOP_${memstr} ] ; then
+    echo "STOP file detected, terminating"
+    exit 0
+fi
+
+
+#====================================================================
+# Launch Tarring scripts
+if [ -f ${POSTPROCESSING_LOGDIR}/"NETCDF_COMBINE_${memstr}.done" ]; then
+        if [ ! -f "${POSTPROCESSING_LOGDIR}/TARR_${memstr}.done" ]; then
+		tar -cvf ${SAVE_EXP_DIR}/${memstr}.tar ${WDIR}/${memstr}
+		touch ${POSTPROCESSING_LOGDIR}/TARR_${memstr}.done
+		github_message tar_member success
+	fi
+fi
+
+if [ -f ${WDIR}/STOP ] || [ -f ${WDIR}/STOP_${memstr} ] ; then
+    echo "STOP file detected, terminating"
+    exit 0
+fi
+
+
 #====================================================================
 # Launch Regridding scripts
 export PATH="${PYTHON}:${PYTHON}/bin:${PATH}"
 export PYTHONPATH="${PYTHONPATH}:${ZARR_PATH}"
-if [ -f ${POSTPROCESSING_LOGDIR}/"NETCDF_COMBINE_${memstr}.done" ]; then
+if [ -f ${POSTPROCESSING_LOGDIR}/"TARR_${memstr}.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
 		github_message regridding start
                 ${POSTPROCESSING_SRCDIR}/convert_forecast_to_isobaric_Gadi.sh ./
@@ -147,13 +221,19 @@ if [ -f ${POSTPROCESSING_LOGDIR}/"NETCDF_COMBINE_${memstr}.done" ]; then
 		github_message regridding success
 
 		#-------------------------------------------
-		# How can we detect if regrid failed?
+		# NOTE: How can we detect if regrid failed?
 		#-------------------------------------------
 		# When we can, run the following to tell github
                 # github_message regridding fail
 		#-------------------------------------------
         fi
 fi
+
+if [ -f ${WDIR}/STOP ] || [ -f ${WDIR}/STOP_${memstr} ] ; then
+    echo "STOP file detected, terminating"
+    exit 0
+fi
+
 
 #====================================================================
 # Set up striping of ZARR output directory
@@ -165,6 +245,12 @@ elif (( `lfs getstripe -d $ZARR_OUTPUT_PATH | grep -oP "stripe_count:\s+\K[0-9]+
         echo "$ZARR_OUTPUT_PATH exists but is not striped correctly"
         exit
 fi
+
+if [ -f ${WDIR}/STOP ] || [ -f ${WDIR}/STOP_${memstr} ] ; then
+    echo "STOP file detected, terminating"
+    exit 0
+fi
+
 
 #====================================================================
 # Launch zarring scripts
@@ -198,12 +284,17 @@ if [ -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
 		github_message zarring success
 
 		#-------------------------------------------
-		# How can we detect if ZARR failed?
+		# NOTE: How can we detect if ZARR failed?
 		#-------------------------------------------
 		# When we can, runt the following to tell github
                 # github_message zarring fail
 		#-------------------------------------------
         fi
+fi
+
+if [ -f ${WDIR}/STOP ] || [ -f ${WDIR}/STOP_${memstr} ] ; then
+    echo "STOP file detected, terminating"
+    exit 0
 fi
 
 
@@ -225,6 +316,11 @@ if [ -f "${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.done" ]; then
 			github_message error_checking fail
                 fi
         fi
+fi
+
+if [ -f ${WDIR}/STOP ] || [ -f ${WDIR}/STOP_${memstr} ] ; then
+    echo "STOP file detected, terminating"
+    exit 0
 fi
 
 
@@ -250,8 +346,14 @@ if (( num_complete == ENSSIZE )) ; then
                 qsub -v "paths_to_merge=$(echo ${paths_to_merge[@]}), zarr_path=${ZARR_OUTPUT_PATH}, realms=$(echo ${remaining_realms[@]}), n_merge_jobs=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, LOG_DIR=$POSTPROCESSING_LOGDIR" ${POSTPROCESSING_SRCDIR}/run_merge_members_Gadi.sh
         fi
 	#-------------------------------------------
-	# How can we detect if merge realms failed??
+	# NOTE: How can we detect if merge realms failed??
 	#-------------------------------------------
+
+
+	# Once merging jobs tar up base file including the messaging logs
+	tar -cvf ${SAVE_EXP_DIR}/logs.tar $WDIR/postprocessing_logs $WDIR/github_messages
+	touch ${POSTPROCESSING_LOGDIR}/TARR_logs.done
+	github_message tar_logs success
 fi
 
 #====================================================================

@@ -21,24 +21,11 @@ if [ ! -f "${WDIR}/JULDAY.txt" ] ; then
     echo $JULDAY > ${WDIR}/JULDAY.txt
 fi
 
-if [ ! -f "${WDIR}/CYCLE_ID.txt" ] ; then
-    echo 0 > ${WDIR}/CYCLE_ID.txt
-    git log | head -n1 > $WDIR/cm-forecast.version.txt
-    cd $MOM_SRC_DIR ; git log | head -n1 > $WDIR/mom_cafe.version.txt ; cd $CWD
-    $dn2date $JULDAY $JULBASE > $WDIR/experiment_start_date.txt
-fi
-CYCLE_ID=`cat $WDIR/CYCLE_ID.txt | head -1`
+git log | head -n1 > $WDIR/cm-forecast.version.txt
+cd $MOM_SRC_DIR ; git log | head -n1 > $WDIR/mom_cafe.version.txt ; cd $CWD
+$dn2date $JULDAY $JULBASE > $WDIR/experiment_start_date.txt
 
-if (( $# == 0 )) ; then
-    if [ ! -f "${WDIR}/CYCLE_END.txt" ] ; then
-        echo 1 > ${WDIR}/CYCLE_END.txt
-    fi
-else
-    echo $1 > ${WDIR}/CYCLE_END.txt
-fi
-CYCLE_END=`cat ${WDIR}/CYCLE_END.txt | head -1`
-
-echo "  running ${EXPNAME}, cycle ${CYCLE_ID}"
+echo "  running ${EXPNAME}"
 cd $WDIR
 WDIR_pwd=`pwd`
 cd $CWD
@@ -52,9 +39,9 @@ cat src/${RUNSCRIPTNAME}.in | sed "s|INPUT_NPMASTER|${NP_MASTER}|" >> ${WDIR}/${
 cd $WDIR
 
 if [ "${queue}" = "pbs" ] ; then
-    qsub -N ${this_date_print}-$CYCLE_ID ./${RUNSCRIPTNAME}
+    qsub -N ${this_date_print}./${RUNSCRIPTNAME}
 elif [ "${queue}" = "slurm" ] ; then
-    sbatch -J ${this_date_print}-$CYCLE_ID ./${RUNSCRIPTNAME}
+    sbatch -J ${this_date_print} ./${RUNSCRIPTNAME}
 else
     echo 'Unsupported queing system'
     exit

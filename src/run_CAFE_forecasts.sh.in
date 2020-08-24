@@ -114,7 +114,11 @@ if [ ! -d "${WDIR}/mem000"  ] ; then
 
 			ln -sf ${MOMINPUT_DIR}/*  ${WDIR}/${memstr}/INPUT
 			rm ${WDIR}/${memstr}/INPUT/bgc_param.nc
-			cp ${BGC_PARAM_DIR}/${memstr}.nc ${WDIR}/${memstr}/INPUT/bgc_param.nc
+			if (( mem == 0 )) ; then
+				cp ${BGC_PARAM_DIR}/mem001.nc ${WDIR}/${memstr}/INPUT/bgc_param.nc
+			else	
+				cp ${BGC_PARAM_DIR}/${memstr}.nc ${WDIR}/${memstr}/INPUT/bgc_param.nc
+			fi
 
 			cat ${WDIR}/${memstr}/INPUT/coupler.res.in\
 				| sed "s|INPUT_YEAR|${Y_CA}|"\

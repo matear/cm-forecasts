@@ -14,8 +14,9 @@ module list
 DT=DT_INPUT  
 # Shorten the <months> variable if <DT> wass made smaller due to numerical instability 
 # and run time for full forecast too long to fit into maximim walltime.
-# Esnure that <months> is an integer multiple of <months_orig> so that the <NUM_CYCLES> variables is also an integer.
 months=MONTHS_INPUT
+# Set number of cycles depending on above settings
+NUM_CYCLES=1
 #-------------------------------------------
 
 WDIR=WDIR_INPUT
@@ -24,7 +25,6 @@ CYCLE_ID=CYCLE_ID_INPUT
 mem=MEM1_INPUT
 months_orig=MONTHS_INPUT
 DT_orig=DT_INPUT
-NUM_CYCLES=$((months_orig / months))
 
 PYTHON=PYTHON_INPUT
 POSTPROCESSING_SRCDIR=POSTPROCESSING_SRCDIR_INPUT
@@ -327,7 +327,7 @@ fi
 #====================================================================
 # Check if all zarring completed
 num_complete=`ls ${POSTPROCESSING_LOGDIR}/CHECK_*.done | wc -l`
-if (( num_complete == ENSSIZE )) ; then
+if (( num_complete == ENSSIZE + 1 )) ; then
         paths_to_merge=( `ls -d ${ZARR_OUTPUT_PATH}/mem???` )
         realms_as_separate_jobs=( atmos_daily atmos_isobaric_daily ocean_month ocean_bgc_month ) # all realms not specified here will be lumped into single additional job
         exclude_realms=( ) # realms not to merge (e.g. if already done)

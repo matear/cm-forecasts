@@ -18,6 +18,8 @@ function traperr
 }
 trap 'traperr $LINENO' ERR
 
+export PATH="${PYTHON}:${PYTHON}/bin:${PATH}"
+export PYTHONPATH="${PYTHONPATH}:${ZARR_PATH}"
 
 #=======================================================================
 echo "Reading input parameters, setting dates and save directories. Date= "`date`
@@ -103,6 +105,9 @@ if [ ! -d "${WDIR}/mem000"  ] ; then
 				#-----------------------------------------------
 				# NOTE: Special case - ensemble mean restart
 				cp ${INITENSDIR_ENS_MEAN}/* ${WDIR}/${memstr}/INPUT
+				for filename in `ls *.res.nc *sponge.nc` ; do
+					python ${WDIR}/src/set_nan_to_zero.py $filename
+				done
 				#-----------------------------------------------
 			else	
 				cp ${INITENSDIR}/${memstr}/* ${WDIR}/${memstr}/INPUT

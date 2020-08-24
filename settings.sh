@@ -3,11 +3,11 @@
 #=======================================================================
 DESCRIPTION='CAFE-60 forecasts'
 
-#ENSSIZE=2
-#FORECAST_CYCLE_LEN_IN_YEARS=1
+ENSSIZE=2
+FORECAST_CYCLE_LEN_IN_YEARS=1
 
-ENSSIZE=96
-FORECAST_CYCLE_LEN_IN_YEARS=10
+#ENSSIZE=96
+#FORECAST_CYCLE_LEN_IN_YEARS=10
 
 #this_date=" 2005  2 1"
 #this_date=" 2005  5 1"
@@ -28,11 +28,11 @@ FORECAST_CYCLE_LEN_IN_YEARS=10
 #this_date=" 2009  2 1"
 #this_date=" 2009  5 1"
 #this_date=" 2009  8 1"
-#this_date=" 2009 11 1" 
+this_date=" 2009 11 1" 
 #this_date=" 2010  2 1"
 #this_date=" 2010  5 1"
 #this_date=" 2010  8 1"
-this_date=" 2010 11 1" 
+#this_date=" 2010 11 1"  # in progress
 #this_date=" 2011  2 1"
 #this_date=" 2011  5 1"
 #this_date=" 2011  8 1"
@@ -153,7 +153,7 @@ fi
 #=======================================================================
 # System settings
 this_date_print=`$dn2date $JULDAY ${JULBASE}`
-EXPNAME=${control_name}-${data_assimilation_name}-${perturbation_name}-${forecast_name}-${this_date_print}
+EXPNAME=${control_name}-${data_assimilation_name}-${perturbation_name}-${forecast_name}-${this_date_print}-test
 WDIR=${OUTPUT_DIR}/${EXPNAME}
 SAVE_EXP_DIR=${SAVE_DIR}/${EXPNAME}
 REF_DIR=${WDIR}"/ref"

@@ -153,7 +153,7 @@ fi
 #=======================================================================
 # System settings
 this_date_print=`$dn2date $JULDAY ${JULBASE}`
-EXPNAME=${control_name}-${data_assimilation_name}-${perturbation_name}-${forecast_name}-${this_date_print}-test
+EXPNAME=${control_name}-${data_assimilation_name}-${perturbation_name}-${forecast_name}-${this_date_print}
 WDIR=${OUTPUT_DIR}/${EXPNAME}
 SAVE_EXP_DIR=${SAVE_DIR}/${EXPNAME}
 REF_DIR=${WDIR}"/ref"

@@ -3,11 +3,11 @@
 #=======================================================================
 DESCRIPTION='CAFE-60 forecasts'
 
-ENSSIZE=2
-FORECAST_CYCLE_LEN_IN_YEARS=1
+#ENSSIZE=2
+#FORECAST_CYCLE_LEN_IN_YEARS=1
 
-#ENSSIZE=96
-#FORECAST_CYCLE_LEN_IN_YEARS=10
+ENSSIZE=96
+FORECAST_CYCLE_LEN_IN_YEARS=10
 
 #this_date=" 2005  2 1"
 #this_date=" 2005  5 1"

@@ -16,6 +16,7 @@ set -eu
 CWD=`pwd`
 mkdir -p $WDIR
 mkdir -p $SAVE_EXP_DIR
+chmod 755 $SAVE_EXP_DIR
 
 if [ ! -f "${WDIR}/JULDAY.txt" ] ; then
 	echo $JULDAY > ${WDIR}/JULDAY.txt

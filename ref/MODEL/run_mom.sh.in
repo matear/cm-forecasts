@@ -15,13 +15,10 @@ DT=DT_INPUT
 # Shorten the <months> variable if <DT> wass made smaller due to numerical instability 
 # and run time for full forecast too long to fit into maximim walltime.
 months=MONTHS_INPUT
-# Set number of cycles depending on above settings
-NUM_CYCLES=1
 #-------------------------------------------
 
 WDIR=WDIR_INPUT
 SAVE_EXP_DIR=SAVE_EXP_DIR_INPUT
-CYCLE_ID=CYCLE_ID_INPUT
 mem=MEM1_INPUT
 months_orig=MONTHS_INPUT
 DT_orig=DT_INPUT
@@ -35,7 +32,6 @@ ZARR_OUTPUT_PATH=${SAVE_EXP_DIR}/ZARR
 GITHUB_MESSAGE_DIR=${WDIR}/github_messages
 CHECK_CONFIG_FILE=check_specs.json
 
-JULDAY=`cat ${WDIR}/JULDAY.txt | head -1`
 EXPNAME=`basename ${WDIR}`
 memstr=`printf "mem%03d" $mem`
 
@@ -97,18 +93,22 @@ if [ ! -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
 	rm -f input.nml
 
 	if [ -f ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.progress ] ; then
-		CYCLE_ID=`cat ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.progress | head -1`
+		MONTHS_DONE=`cat ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.progress | head -1`
 	else
-		CYCLE_ID=0
+		MONTHS_DONE=0
 	fi
 
-        if (( CYCLE_ID == 0 )) ; then
+        if (( MONTHS_DONE == 0 )) ; then
 		# first MOM cycle
 	       	THUMP=.true.
         else
 		# restart from previous MOM cycle if needed to split into two jobs
 	       	THUMP=.false.
         fi
+
+        if (( MONTHS_DONE + months > months_orig )) ; then
+		months=$((months_orig-MONTHS_DONE))
+	fi
 
 	cat ${WDIR}/MOM/input.nml \
 		| sed "s/.*dt_ocean.*/dt_ocean = ${DT}/"\
@@ -144,22 +144,26 @@ if [ ! -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
 	                touch ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done
 			github_message forecast success
 		else
-			(( CYCLE_ID += 1 ))
-        		if (( NUM_CYCLES == CYCLE_ID )) ; then
+			(( MONTHS_DONE += months ))
+        		if (( MONTHS_DONE == months_orig )) ; then
 				rm ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.progress
 	                	touch ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done
 				github_message forecast success
 			else
-				# number of months in forecast has changed presumably due to reduced timestep size
-				echo ${CYCLE_ID} > ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.progress
-				echo "mom-${CYCLE_ID}-MOM (member $mem) in progress and requires user verification and then relaunch, bailing out."
+				echo ${MONTHS_DONE} > ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.progress
+				echo "mom member $mem in progress and requires user verification and then relaunch, bailing out."
 				github_message forecast progress
+				mv mom-${DT}.out mom-${DT}.out.${MONTHS_DONE}_months_done
+				#--------------------------------------
+				# Once confident code does not require user intervention the following line will relaunch this script.
+				#cd ${WDIR}
+				#qsub $0
+				#--------------------------------------
 				exit
 			fi
 		fi
-
 	else
-		echo "mom-${CYCLE_ID}-MOM (member $mem) failed, bailing out."
+		echo "mom member $mem failed, bailing out."
 		touch ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.failed
 		github_message forecast fail
 		exit
@@ -348,7 +352,6 @@ if (( num_complete == ENSSIZE + 1 )) ; then
 	#-------------------------------------------
 	# NOTE: How can we detect if merge realms failed??
 	#-------------------------------------------
-
 
 	# Once merging jobs tar up base file including the messaging logs
 	tar -cvf ${SAVE_EXP_DIR}/logs.tar $WDIR/postprocessing_logs $WDIR/github_messages

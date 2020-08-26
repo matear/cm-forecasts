@@ -18,12 +18,12 @@ function traperr
 }
 trap 'traperr $LINENO' ERR
 
-export PATH="${PYTHON}:${PYTHON}/bin:${PATH}"
-export PYTHONPATH="${PYTHONPATH}:${ZARR_PATH}"
-
 #=======================================================================
 echo "Reading input parameters, setting dates and save directories. Date= "`date`
 	. settings.sh
+
+	export PATH="${PYTHON}:${PYTHON}/bin:${PATH}"
+	export PYTHONPATH="${PYTHONPATH}:${ZARR_PATH}"
 
 	(( FORECAST_CYCLE_LEN_IN_MONTHS = FORECAST_CYCLE_LEN_IN_YEARS * 12 ))
 
@@ -38,20 +38,6 @@ echo "Reading input parameters, setting dates and save directories. Date= "`date
 	D_CA=`echo $DATE_CA | cut -b7-8`
 	echo "  first day of this cycle = $DATE_CA"
 
-        (( Y_NA = Y_CA + FORECAST_CYCLE_LEN_IN_YEARS ))
-        JULDAY_NA=`$date2dn $Y_NA $M_CA $D_CA ${JULBASE}`
-	echo "  first day of next cycle = ${Y_NA}${M_CA}${D_CA}"
-
-	# Set save directories
-	SAVEDIR=${WDIR}/${DATE_CA}
-	SAVEDIR_PREV=${SAVEDIR}
-	mkdir -p $SAVEDIR
-	cp ${WDIR}/JULDAY.txt $SAVEDIR
-
-	# Move standard output from previous launch
-	if stat -t $WDIR/$EXPNAME*.o* >/dev/null 2>&1 ; then
-		mv $WDIR/$EXPNAME*.o* $SAVEDIR_PREV
-	fi
 	cd ${WDIR}
 
 
@@ -81,7 +67,7 @@ if [ ! -d "${WDIR}/mem000"  ] ; then
 	done
 	cp ${REF_DIR}/MODEL/run_mom.sh.in $WDIR
 	cp ${BASE_DIR}/INIT/STATIC/* ${MOMINPUT_DIR}
-	JULDAY_CA=`cat ${WDIR}/JULDAY.txt | head -1`
+	#JULDAY_CA=`cat ${WDIR}/JULDAY.txt | head -1`
 
 	# Copy initial ensemble
 	for (( mem1 = 0; mem1 <= ENSSIZE; mem1 += NP_MASTER )) ; do
@@ -93,11 +79,11 @@ if [ ! -d "${WDIR}/mem000"  ] ; then
 			(
 			set -eu
 			memstr=`printf "mem%03d" $mem`
-			rm -rf ${WDIR}/$memstr
-			mkdir -p ${WDIR}/$memstr
-			mkdir -p ${WDIR}/$memstr/INPUT
-			mkdir -p ${WDIR}/$memstr/INPUT_SAVE
-			mkdir -p ${WDIR}/$memstr/RESTART
+			rm -rf ${WDIR}/${memstr}
+			mkdir -p ${WDIR}/${memstr}
+			mkdir -p ${WDIR}/${memstr}/INPUT
+			mkdir -p ${WDIR}/${memstr}/INPUT_SAVE
+			mkdir -p ${WDIR}/${memstr}/RESTART
 
 			cp ${BASE_DIR}/INIT/SPONGES/*.nc  ${WDIR}/${memstr}/INPUT
 		
@@ -105,7 +91,7 @@ if [ ! -d "${WDIR}/mem000"  ] ; then
 				#-----------------------------------------------
 				# NOTE: Special case - ensemble mean restart
 				cp ${INITENSDIR_ENS_MEAN}/* ${WDIR}/${memstr}/INPUT
-				for filename in `ls *.res.nc *sponge.nc` ; do
+				for filename in `ls ${WDIR}/${memstr}/INPUT/*.res.nc ${WDIR}/${memstr}/INPUT/*sponge.nc` ; do
 					python ${WDIR}/src/set_nan_to_zero.py $filename
 				done
 				#-----------------------------------------------
@@ -132,7 +118,7 @@ if [ ! -d "${WDIR}/mem000"  ] ; then
 				| sed "s|INPUT_DAY|${D_CA}|"\
 				> ${WDIR}/${memstr}/INPUT/coupler.res
 
-			# This was necessary in the DA system. Perhaps not here.
+			# Necessary to get files in the appropriate format post applying the increments from the DA system
 			nccopy -u ${WDIR}/${memstr}/INPUT/fv_rst.res.nc ${WDIR}/${memstr}/INPUT/fv_rst.res.nc2 
 			mv ${WDIR}/${memstr}/INPUT/fv_rst.res.nc2 ${WDIR}/${memstr}/INPUT/fv_rst.res.nc   
 			nccopy -u ${WDIR}/${memstr}/INPUT/atmos_tracers.res.nc ${WDIR}/${memstr}/INPUT/atmos_tracers.res.nc2 

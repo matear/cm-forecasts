@@ -18,7 +18,7 @@ months=MONTHS_INPUT
 #-------------------------------------------
 
 WDIR=WDIR_INPUT
-SAVE_EXP_DIR=SAVE_EXP_DIR_INPUT
+SAVE_DIR=SAVE_DIR_INPUT
 mem=MEM1_INPUT
 months_orig=MONTHS_INPUT
 DT_orig=DT_INPUT
@@ -28,11 +28,13 @@ POSTPROCESSING_SRCDIR=POSTPROCESSING_SRCDIR_INPUT
 POSTPROCESSING_LOGDIR=POSTPROCESSING_LOGDIR_INPUT
 ZARR_PATH=ZARR_PATH_INPUT
 ZARR_CONFIG_FILE=zarr_specs_CAFE-f6.json
-ZARR_OUTPUT_PATH=${SAVE_EXP_DIR}/ZARR
-GITHUB_MESSAGE_DIR=${WDIR}/github_messages
-CHECK_CONFIG_FILE=check_specs.json
 
 EXPNAME=`basename ${WDIR}`
+SAVE_EXP_DIR=${SAVE_DIR}/${EXPNAME}
+ZARR_OUTPUT_PATH=${SAVE_EXP_DIR}/ZARR
+GITHUB_MESSAGE_DIR=${SAVE_DIR}/github_messages
+CHECK_CONFIG_FILE=check_specs.json
+
 memstr=`printf "mem%03d" $mem`
 
 # Make status logging directories
@@ -155,7 +157,7 @@ if [ ! -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
 				github_message forecast progress
 				mv mom-${DT}.out mom-${DT}.out.${MONTHS_DONE}_months_done
 				#--------------------------------------
-				# Once confident code does not require user intervention the following line will relaunch this script.
+				# Once confident code does not require user intervention, uncomment the following line to autmatically relaunch this script.
 				#cd ${WDIR}
 				#qsub $0
 				#--------------------------------------

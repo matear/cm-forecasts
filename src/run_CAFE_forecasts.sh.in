@@ -43,8 +43,9 @@ echo "Reading input parameters, setting dates and save directories. Date= "`date
 
 #=======================================================================
 echo "At the first cycle : copy MOM input files ; copy ensemble of restarts. Date= "`date`
-if [ ! -d "${WDIR}/mem000"  ] ; then
+if [ ! -d "${MOMINPUT_DIR}"  ] ; then
 	echo "starting INIT. DATE=" `date`
+	mkdir -p ${MOMINPUT_DIR}
 
 	# Set appropriate diag and field tables
 	for file in diag_table field_table ; do
@@ -59,7 +60,6 @@ if [ ! -d "${WDIR}/mem000"  ] ; then
 	cat ${REF_DIR}/MODEL/field_table | sed "s|ACO2_FILE|${ACO2_FILE}|" > ${REF_DIR}/MODEL/field_table.tmp
 	mv ${REF_DIR}/MODEL/field_table.tmp ${REF_DIR}/MODEL/field_table
 
-	mkdir -p ${MOMINPUT_DIR}
 	cp ${MOM_BIN_DIR}/${EXECNAME} ${WDIR}/MOM/   # get local binary
 	cp ${MOM_SRC_DIR}/src/postprocessing/mppnccombine/mppnccombine ${WDIR}/MOM/   # get local binary 
 	for file in diag_table field_table data_table merge.sh input.in ; do
@@ -70,7 +70,7 @@ if [ ! -d "${WDIR}/mem000"  ] ; then
 	#JULDAY_CA=`cat ${WDIR}/JULDAY.txt | head -1`
 
 	# Copy initial ensemble
-	for (( mem1 = 0; mem1 <= ENSSIZE; mem1 += NP_MASTER )) ; do
+	for (( mem1 = FIRST_MEMBER ; mem1 <= ENSSIZE; mem1 += NP_MASTER )) ; do
 		(( mem2 = mem1 + NP_MASTER - 1 ))
 		if (( mem2 > $ENSSIZE )) ; then
 			mem2=$ENSSIZE
@@ -190,12 +190,12 @@ echo "Starting model propagation. DATE=" `date`
                 | sed "s|ENSSIZE|${ENSSIZE}|"\
                 | sed "s|DT_INPUT|\"${DT}\"|"\
                 | sed "s|WDIR_INPUT|\"${WDIR}\"|"\
-                | sed "s|SAVE_EXP_DIR_INPUT|\"${SAVE_EXP_DIR}\"|"\
+                | sed "s|SAVE_DIR_INPUT|\"${SAVE_DIR}\"|"\
                 | sed "s|MOM_COMMAND_INPUT|${MOM_COMMAND}|"\
                 >> ${WDIR}/run_mom.sh
 
 	# launch jobs
-	for (( mem = 0; mem <= ENSSIZE; ++mem )) ; do
+	for (( mem = FIRST_MEMBER; mem <= ENSSIZE; ++mem )) ; do
 		numstr=`printf "%03d" $mem`
 		memstr='mem'$numstr
 		if [ ! -f ${POSTPROCESSING_LOGDIR}/CHECK_${memstr}.done ] ; then

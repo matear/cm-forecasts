@@ -22,7 +22,7 @@ if [ ! -f "${WDIR}/JULDAY.txt" ] ; then
 	echo $JULDAY > ${WDIR}/JULDAY.txt
 	git log | head -n1 > $WDIR/cm-forecast.version.txt
 	cd $MOM_SRC_DIR ; git log | head -n1 > $WDIR/mom_cafe.version.txt ; cd $CWD
-	cd $POSTPROCESSING_SRCDIR ; git log | head -n1 > $WDIR/post_processing..version.txt ; cd $CWD
+	cd $POSTPROCESSING_SRCDIR ; git log | head -n1 > $WDIR/post-processing.version.txt ; cd $CWD
 	$dn2date $JULDAY $JULBASE > $WDIR/experiment_start_date.txt
 fi
 

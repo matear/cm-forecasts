@@ -356,7 +356,7 @@ if (( num_complete == ENSSIZE + 1 )) ; then
 	#-------------------------------------------
 
 	# Once merging jobs tar up base file including the messaging logs
-	tar -cvf ${SAVE_EXP_DIR}/logs.tar $WDIR/postprocessing_logs $WDIR/github_messages
+	tar -cvf ${SAVE_EXP_DIR}/logs.tar $WDIR/postprocessing_logs 
 	touch ${POSTPROCESSING_LOGDIR}/TARR_logs.done
 	github_message tar_logs success
 fi

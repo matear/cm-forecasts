@@ -39,6 +39,8 @@ cp $HEADER_MASTER ${WDIR}/${RUNSCRIPTNAME}
 cat src/${RUNSCRIPTNAME}.in | sed "s|INPUT_NPMASTER|${NP_MASTER}|" >> ${WDIR}/${RUNSCRIPTNAME}
 cd $WDIR
 
+exit
+
 if [ "${queue}" = "pbs" ] ; then
 	qsub -N ${this_date_print} ./${RUNSCRIPTNAME}
 elif [ "${queue}" = "slurm" ] ; then

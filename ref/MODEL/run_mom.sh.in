@@ -17,6 +17,7 @@ DT=DT_INPUT
 months=MONTHS_INPUT
 #-------------------------------------------
 
+machine=MACHINE_INPUT
 WDIR=WDIR_INPUT
 SAVE_DIR=SAVE_DIR_INPUT
 mem=MEM1_INPUT
@@ -26,6 +27,7 @@ DT_orig=DT_INPUT
 PYTHON=PYTHON_INPUT
 POSTPROCESSING_SRCDIR=POSTPROCESSING_SRCDIR_INPUT
 POSTPROCESSING_LOGDIR=POSTPROCESSING_LOGDIR_INPUT
+GITHUB_MESSAGE_DIR=GITHUB_MESSAGE_INPUT
 ZARR_PATH=ZARR_PATH_INPUT
 ZARR_CONFIG_FILE=zarr_specs_CAFE-f6.json
 
@@ -33,14 +35,9 @@ EXPNAME=`basename ${WDIR}`
 SAVE_EXP_DIR=${SAVE_DIR}/${EXPNAME}
 TAPE_DIR=TAPE_DIR_INPUT
 ZARR_OUTPUT_PATH=${SAVE_EXP_DIR}/ZARR
-GITHUB_MESSAGE_DIR=${SAVE_DIR}/github_messages
 CHECK_CONFIG_FILE=check_specs.json
 
 memstr=`printf "mem%03d" $mem`
-
-# Make status logging directories
-mkdir -p $GITHUB_MESSAGE_DIR
-mkdir -p $POSTPROCESSING_LOGDIR
 
 
 #====================================================================
@@ -203,10 +200,10 @@ fi
 #====================================================================
 # Launch Tarring scripts
 if [ -f ${POSTPROCESSING_LOGDIR}/"NETCDF_COMBINE_${memstr}.done" ]; then
-        if [ ! -f "${POSTPROCESSING_LOGDIR}/TARR_${memstr}.done" ]; then
+        if [ ! -f "${POSTPROCESSING_LOGDIR}/TAR_${memstr}.done" ]; then
 		github_message tar_member start
 		tar -cvf ${SAVE_EXP_DIR}/${EXPNAME}-${memstr}.tar ${WDIR}/${memstr}
-		touch ${POSTPROCESSING_LOGDIR}/TARR_${memstr}.done
+		touch ${POSTPROCESSING_LOGDIR}/TAR_${memstr}.done
 		github_message tar_member success
 
 		#-------------------------------------------
@@ -227,17 +224,20 @@ fi
 
 #====================================================================
 # Archiving tarred files to tape
-if [ -f ${POSTPROCESSING_LOGDIR}/"TARR_${memstr}.done" ]; then
+if [ -f ${POSTPROCESSING_LOGDIR}/"TAR_${memstr}.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/TAPE_ARCHIVE_${memstr}.done" ]; then
-		github_message tape_archive_member start
-		mdss -P v14 put ${EXPNAME}-${memstr}.tar ${TAPE_DIR}/
+		if [ "${machine}" = "gadi.nci.org.au" ] ; then
+			github_message tape_archive_member start
+			mdss -P v14 put ${SAVE_EXP_DIR}/${EXPNAME}-${memstr}.tar ${TAPE_DIR}/
 		#-------------------------------------------
 		# To instead submit as job
 		#netcp -C -N mdss-${memstr} -l other=mdss,storage=gdata/v14+scratch/ux06,mem=4Gb ${EXPNAME}-${memstr}.tar ${TAPE_DIR}/
 		#-------------------------------------------
-		touch ${POSTPROCESSING_LOGDIR}/TAPE_ARCHIVE_${memstr}.done
-		github_message tape_archive_member sucess
-
+			touch ${POSTPROCESSING_LOGDIR}/TAPE_ARCHIVE_${memstr}.done
+			github_message tape_archive_member success
+		else
+			touch ${POSTPROCESSING_LOGDIR}/TAPE_ARCHIVE_${memstr}.done
+		fi
 		#-------------------------------------------
 		# NOTE: How can we detect if tape archived failed?
 		#-------------------------------------------
@@ -369,7 +369,7 @@ fi
 
 
 #====================================================================
-# Check if all zarring completed
+# Launch merge jobs
 num_complete=`ls ${POSTPROCESSING_LOGDIR}/CHECK_*.done | wc -l`
 if (( num_complete == ENSSIZE + 1 )) ; then
         paths_to_merge=( `ls -d ${ZARR_OUTPUT_PATH}/mem???` )
@@ -393,12 +393,25 @@ if (( num_complete == ENSSIZE + 1 )) ; then
 	# NOTE: How can we detect if merge realms failed??
 	#-------------------------------------------
 
-	# Once merging jobs tar up base file including the messaging logs
-	tar -cvf ${SAVE_EXP_DIR}/${EXPNAME}-logs.tar $WDIR/postprocessing_logs 
-	touch ${POSTPROCESSING_LOGDIR}/TARR_logs.done
-	github_message tar_logs success
+        if [ ! -f "${POSTPROCESSING_LOGDIR}/TAR_logs.done" ]; then
+		github_message tar_logs start
+		tar -cvf ${SAVE_EXP_DIR}/${EXPNAME}-logs.tar $WDIR/postprocessing_logs 
+		touch ${POSTPROCESSING_LOGDIR}/TAR_logs.done
+		github_message tar_logs success
+	fi
 
-	netcp -C -N mdss-logs -l other=mdss,storage=gdata/v14+scratch/ux06,mem=4Gb ${EXPNAME}-logs.tar ${TAPE_DIR}/
+        if [ -f "${POSTPROCESSING_LOGDIR}/TAR_logs.done" ]; then
+        	if [ ! -f "${POSTPROCESSING_LOGDIR}/TAPE_ARCHIVE_logs.done" ]; then
+			if [ "${machine}" = "gadi.nci.org.au" ] ; then
+				github_message tape_archive_logs start
+				mdss -P v14 put ${SAVE_EXP_DIR}/${EXPNAME}-logs.tar ${TAPE_DIR}/
+				touch ${POSTPROCESSING_LOGDIR}/TAPE_ARCHIVE_logs.done
+				github_message tape_archive_logs success
+			else
+				touch ${POSTPROCESSING_LOGDIR}/TAPE_ARCHIVE_logs.done
+			fi
+		fi
+	fi
 fi
 
 #====================================================================

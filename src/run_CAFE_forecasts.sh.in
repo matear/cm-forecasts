@@ -247,25 +247,19 @@ echo "Starting model propagation. DATE=" `date`
 	if [ ! -f ${POSTPROCESSING_LOGDIR}/TAR_base.done ] ; then
 		github_message tar_base start
 	        tar -cvf ${SAVE_EXP_DIR}/${EXPNAME}-base.tar $WDIR/*.* $WDIR/MOM $WDIR/ref $WDIR/src 
+		if [ "${machine}" = "gadi.nci.org.au" ] ; then
+			# submitted as a separate job
+			netcp -C -N mdss-base -l other=mdss,storage=gdata/v14+scratch/ux06,mem=4Gb ${SAVE_EXP_DIR}/${EXPNAME}-base.tar ${TAPE_DIR}/
+		fi
         	touch ${POSTPROCESSING_LOGDIR}/TAR_base.done
 		github_message tar_base success
-		echo -n "   Tarring of base files complete."
-	fi
 
-#=======================================================================
-	if [ "${machine}" = "gadi.nci.org.au" ] ; then
-		if [ -f ${POSTPROCESSING_LOGDIR}/TAR_base.done ] ; then
-			if [ ! -f ${POSTPROCESSING_LOGDIR}/TAPE_ARCHIVE_base.done ] ; then
-				github_message tape_archive_base start
-				mdss -P v14 mkdir ${TAPE_DIR}
-				# To submit as job
-				#netcp -C -N mdss-base -l other=mdss,storage=gdata/v14+scratch/ux06,mem=4Gb ${EXPNAME}-base.tar ${TAPE_DIR}/
-				mdss -P v14 put ${SAVE_EXP_DIR}/${EXPNAME}-base.tar ${TAPE_DIR}/
-        			touch ${POSTPROCESSING_LOGDIR}/TAPE_ARCHIVE_base.done
-				github_message tape_archive_base success
-				echo -n "   Archiving of tared of base files to tape complete."
-			fi
-		fi
+                #-------------------------------------------
+                # NOTE: How can we detect if tarring or tape archived failed?
+                #-------------------------------------------
+                # When we can, run the following to tell github
+                # github_message tar_member fail
+                #-------------------------------------------
 	fi
 
 #=======================================================================

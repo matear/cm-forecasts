@@ -24,6 +24,9 @@ if [ ! -f "${WDIR}/JULDAY.txt" ] ; then
 	cd $MOM_SRC_DIR ; git log | head -n1 > $WDIR/mom_cafe.version.txt ; cd $CWD
 	cd $POSTPROCESSING_SRCDIR ; git log | head -n1 > $WDIR/post-processing.version.txt ; cd $CWD
 	$dn2date $JULDAY $JULBASE > $WDIR/experiment_start_date.txt
+	if [ "${machine}" = "gadi.nci.org.au" ] ; then
+		mdss -P v14 mkdir ${TAPE_DIR}
+	fi
 fi
 
 echo "  running ${EXPNAME}"

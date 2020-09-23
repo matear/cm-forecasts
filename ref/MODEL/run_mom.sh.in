@@ -203,46 +203,18 @@ if [ -f ${POSTPROCESSING_LOGDIR}/"NETCDF_COMBINE_${memstr}.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/TAR_${memstr}.done" ]; then
 		github_message tar_member start
 		tar -cvf ${SAVE_EXP_DIR}/${EXPNAME}-${memstr}.tar ${WDIR}/${memstr}
+		if [ "${machine}" = "gadi.nci.org.au" ] ; then
+			# submitted as a separate job
+			netcp -C -N mdss-${memstr} -l other=mdss,storage=gdata/v14+scratch/ux06,mem=4Gb ${SAVE_EXP_DIR}/${EXPNAME}-${memstr}.tar ${TAPE_DIR}/
+		fi
 		touch ${POSTPROCESSING_LOGDIR}/TAR_${memstr}.done
 		github_message tar_member success
 
 		#-------------------------------------------
-		# NOTE: How can we detect if tape archived failed?
+		# NOTE: How can we detect if tarring or tape archived failed?
 		#-------------------------------------------
 		# When we can, run the following to tell github
                 # github_message tar_member fail
-		#-------------------------------------------
-	fi
-fi
-
-if [ -f ${WDIR}/STOP ] || [ -f ${WDIR}/STOP_${memstr} ] ; then
-    echo "STOP file detected, terminating"
-    exit 0
-fi
-
-
-
-#====================================================================
-# Archiving tarred files to tape
-if [ -f ${POSTPROCESSING_LOGDIR}/"TAR_${memstr}.done" ]; then
-        if [ ! -f "${POSTPROCESSING_LOGDIR}/TAPE_ARCHIVE_${memstr}.done" ]; then
-		if [ "${machine}" = "gadi.nci.org.au" ] ; then
-			github_message tape_archive_member start
-			mdss -P v14 put ${SAVE_EXP_DIR}/${EXPNAME}-${memstr}.tar ${TAPE_DIR}/
-		#-------------------------------------------
-		# To instead submit as job
-		#netcp -C -N mdss-${memstr} -l other=mdss,storage=gdata/v14+scratch/ux06,mem=4Gb ${EXPNAME}-${memstr}.tar ${TAPE_DIR}/
-		#-------------------------------------------
-			touch ${POSTPROCESSING_LOGDIR}/TAPE_ARCHIVE_${memstr}.done
-			github_message tape_archive_member success
-		else
-			touch ${POSTPROCESSING_LOGDIR}/TAPE_ARCHIVE_${memstr}.done
-		fi
-		#-------------------------------------------
-		# NOTE: How can we detect if tape archived failed?
-		#-------------------------------------------
-		# When we can, run the following to tell github
-                # github_message tape_archive_member fail
 		#-------------------------------------------
 	fi
 fi
@@ -257,7 +229,7 @@ fi
 # Launch Regridding scripts
 export PATH="${PYTHON}:${PYTHON}/bin:${PATH}"
 export PYTHONPATH="${PYTHONPATH}:${ZARR_PATH}"
-if [ -f ${POSTPROCESSING_LOGDIR}/"TAPE_ARCHIVE_${memstr}.done" ]; then
+if [ -f ${POSTPROCESSING_LOGDIR}/"TAR_ARCHIVE_${memstr}.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
 		github_message regridding start
                 ${POSTPROCESSING_SRCDIR}/convert_forecast_to_isobaric_Gadi.sh ./
@@ -396,22 +368,20 @@ if (( num_complete == ENSSIZE + 1 )) ; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/TAR_logs.done" ]; then
 		github_message tar_logs start
 		tar -cvf ${SAVE_EXP_DIR}/${EXPNAME}-logs.tar $WDIR/postprocessing_logs 
+		if [ "${machine}" = "gadi.nci.org.au" ] ; then
+			# submitted as a separate job
+			netcp -C -N mdss-logs -l other=mdss,storage=gdata/v14+scratch/ux06,mem=4Gb ${SAVE_EXP_DIR}/${EXPNAME}-logs.tar ${TAPE_DIR}/
+		fi
 		touch ${POSTPROCESSING_LOGDIR}/TAR_logs.done
 		github_message tar_logs success
 	fi
 
-        if [ -f "${POSTPROCESSING_LOGDIR}/TAR_logs.done" ]; then
-        	if [ ! -f "${POSTPROCESSING_LOGDIR}/TAPE_ARCHIVE_logs.done" ]; then
-			if [ "${machine}" = "gadi.nci.org.au" ] ; then
-				github_message tape_archive_logs start
-				mdss -P v14 put ${SAVE_EXP_DIR}/${EXPNAME}-logs.tar ${TAPE_DIR}/
-				touch ${POSTPROCESSING_LOGDIR}/TAPE_ARCHIVE_logs.done
-				github_message tape_archive_logs success
-			else
-				touch ${POSTPROCESSING_LOGDIR}/TAPE_ARCHIVE_logs.done
-			fi
-		fi
-	fi
+        #-------------------------------------------
+        # NOTE: How can we detect if tarring or tape archived failed?
+        #-------------------------------------------
+        # When we can, run the following to tell github
+        # github_message tar_member fail
+        #-------------------------------------------
 fi
 
 #====================================================================

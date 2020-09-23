@@ -192,6 +192,7 @@ echo "Starting model propagation. DATE=" `date`
                 | sed "s|WDIR_INPUT|\"${WDIR}\"|"\
                 | sed "s|SAVE_DIR_INPUT|\"${SAVE_DIR}\"|"\
                 | sed "s|MOM_COMMAND_INPUT|${MOM_COMMAND}|"\
+                | sed "s|TAPE_DIR_INPUT|${TAPE_DIR}|"\
                 >> ${WDIR}/run_mom.sh
 
 	# launch jobs
@@ -221,11 +222,22 @@ echo "Starting model propagation. DATE=" `date`
 
 #=======================================================================
 	if [ ! -f ${POSTPROCESSING_LOGDIR}/TARR_base.done ] ; then
-	        tar -cvf ${SAVE_EXP_DIR}/base.tar $WDIR/*.* $WDIR/MOM $WDIR/ref $WDIR/src $WDIR/20*
+	        tar -cvf ${SAVE_EXP_DIR}/${EXPNAME}-base.tar $WDIR/*.* $WDIR/MOM $WDIR/ref $WDIR/src $WDIR/20*
         	touch ${POSTPROCESSING_LOGDIR}/TARR_base.done
 		echo -n "   Tarring of base files complete."
 	fi
 
+#=======================================================================
+	if [ -f ${POSTPROCESSING_LOGDIR}/TARR_base.done ] ; then
+		if [ ! -f ${POSTPROCESSING_LOGDIR}/TAPE_ARCHIVE_base.done ] ; then
+			# To submit as job
+			#netcp -C -N mdss-base -l other=mdss,storage=gdata/v14+scratch/ux06,mem=4Gb ${EXPNAME}-base.tar ${TAPE_DIR}/
+			mdss -P v14 mkdir ${TAPE_DIR}
+			mdss -P v14 put ${EXPNAME}-base.tar ${TAPE_DIR}/
+        		touch ${POSTPROCESSING_LOGDIR}/TAPE_ARCHIVE_base.done
+			echo -n "   Archiving of tared of base files to tape complete."
+		fi
+	fi
 
 #=======================================================================
 # EOF

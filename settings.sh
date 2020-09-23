@@ -3,11 +3,13 @@
 #=======================================================================
 DESCRIPTION='CAFE-60 forecasts'
 
-#ENSSIZE=2
-#FORECAST_CYCLE_LEN_IN_YEARS=1
+ENSSIZE=2
+FORECAST_CYCLE_LEN_IN_YEARS=1
+suffix='-test'  # In definition of experiment name
 
-ENSSIZE=96
-FORECAST_CYCLE_LEN_IN_YEARS=10
+#ENSSIZE=96
+#FORECAST_CYCLE_LEN_IN_YEARS=10
+#suffix=''
 
 #FIRST_MEMBER=0  # also launch the forecasts using the ensemble mean as an initial condition
 FIRST_MEMBER=1
@@ -15,31 +17,31 @@ FIRST_MEMBER=1
 #this_date=" 2005  2 1"
 #this_date=" 2005  5 1"
 #this_date=" 2005  8 1"
-#this_date=" 2005 11 1" 
+this_date=" 2005 11 1"   # in progress
 #this_date=" 2006  2 1"
 #this_date=" 2006  5 1"
 #this_date=" 2006  8 1"
-this_date=" 2006 11 1"   # in prgoress
+#this_date=" 2006 11 1"   # complete
 #this_date=" 2007  2 1"
 #this_date=" 2007  5 1"
 #this_date=" 2007  8 1"
-#this_date=" 2007 11 1"   # in progress
+#this_date=" 2007 11 1"   # complete
 #this_date=" 2008  2 1"
 #this_date=" 2008  5 1"
 #this_date=" 2008  8 1"
-#this_date=" 2008 11 1"   # in progress
+#this_date=" 2008 11 1"   # complete
 #this_date=" 2009  2 1"
 #this_date=" 2009  5 1"
 #this_date=" 2009  8 1"
-#this_date=" 2009 11 1"  # in progress
+#this_date=" 2009 11 1"  # complete
 #this_date=" 2010  2 1"
 #this_date=" 2010  5 1"
 #this_date=" 2010  8 1"
-#this_date=" 2010 11 1"  # in progress
+#this_date=" 2010 11 1"  # complete
 #this_date=" 2011  2 1"
 #this_date=" 2011  5 1"
 #this_date=" 2011  8 1"
-#this_date=" 2011 11 1"  # in progress
+#this_date=" 2011 11 1"  # complete
 #this_date=" 2012  2 1"
 #this_date=" 2012  5 1"
 #this_date=" 2012  8 1"
@@ -131,6 +133,7 @@ data_assimilation_name=d60
 perturbation_name=pX
 forecast_name=f6
 contact_name="Decadal Activity 1 - Data Assimilation"
+# Note, need to update references with CAFE-60 paper once published.
 references="O'Kane, T.J., Sandery, P.A., Monselesan, D.P., Sakov, P., Chamberlain, M.A., Matear, R.J., Collier, M., Squire, D. and Stevens, L., 2019, 'Coupled data assimilation and ensemble initialisation with application to multi-year ENSO prediction', Journal of Climate."
 
 #=======================================================================
@@ -156,9 +159,10 @@ fi
 #=======================================================================
 # System settings
 this_date_print=`$dn2date $JULDAY ${JULBASE}`
-EXPNAME=${control_name}-${data_assimilation_name}-${perturbation_name}-${forecast_name}-${this_date_print}
+EXPNAME=${control_name}-${data_assimilation_name}-${perturbation_name}-${forecast_name}-${this_date_print}${suffix}
 WDIR=${OUTPUT_DIR}/${EXPNAME}
 SAVE_EXP_DIR=${SAVE_DIR}/${EXPNAME}
+TAPE_DIR=${forecast_name}/${EXPNAME}
 REF_DIR=${WDIR}"/ref"
 HEADER_MASTER=${REF_DIR}"/header_master."${machine}
 HEADER_MOM=${REF_DIR}"/header_mom."${machine}

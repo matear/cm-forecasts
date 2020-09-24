@@ -249,7 +249,7 @@ echo "Starting model propagation. DATE=" `date`
 	        tar -cvf ${SAVE_EXP_DIR}/${EXPNAME}-base.tar $WDIR/*.* $WDIR/MOM $WDIR/ref $WDIR/src 
 		if [ "${machine}" = "gadi.nci.org.au" ] ; then
 			# submitted as a separate job
-			netcp -C -N mdss-base -l other=mdss,storage=gdata/v14+scratch/ux06,mem=4Gb ${SAVE_EXP_DIR}/${EXPNAME}-base.tar ${TAPE_DIR}/
+			netcp -P v14 -C -N mdss-base -l other=mdss,storage=gdata/v14+scratch/ux06,mem=4Gb ${SAVE_EXP_DIR}/${EXPNAME}-base.tar ${TAPE_DIR}/
 		fi
         	touch ${POSTPROCESSING_LOGDIR}/TAR_base.done
 		github_message tar_base success

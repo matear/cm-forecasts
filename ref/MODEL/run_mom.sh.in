@@ -205,7 +205,7 @@ if [ -f ${POSTPROCESSING_LOGDIR}/"NETCDF_COMBINE_${memstr}.done" ]; then
 		tar -cvf ${SAVE_EXP_DIR}/${EXPNAME}-${memstr}.tar ${WDIR}/${memstr}
 		if [ "${machine}" = "gadi.nci.org.au" ] ; then
 			# submitted as a separate job
-			netcp -C -N mdss-${memstr} -l other=mdss,storage=gdata/v14+scratch/ux06,mem=4Gb ${SAVE_EXP_DIR}/${EXPNAME}-${memstr}.tar ${TAPE_DIR}/
+			netcp -P v14 -C -N mdss-${memstr} -l other=mdss,storage=gdata/v14+scratch/ux06,mem=4Gb ${SAVE_EXP_DIR}/${EXPNAME}-${memstr}.tar ${TAPE_DIR}/
 		fi
 		touch ${POSTPROCESSING_LOGDIR}/TAR_${memstr}.done
 		github_message tar_member success
@@ -229,7 +229,7 @@ fi
 # Launch Regridding scripts
 export PATH="${PYTHON}:${PYTHON}/bin:${PATH}"
 export PYTHONPATH="${PYTHONPATH}:${ZARR_PATH}"
-if [ -f ${POSTPROCESSING_LOGDIR}/"TAR_ARCHIVE_${memstr}.done" ]; then
+if [ -f ${POSTPROCESSING_LOGDIR}/"TAR_${memstr}.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
 		github_message regridding start
                 ${POSTPROCESSING_SRCDIR}/convert_forecast_to_isobaric_Gadi.sh ./
@@ -370,7 +370,7 @@ if (( num_complete == ENSSIZE + 1 )) ; then
 		tar -cvf ${SAVE_EXP_DIR}/${EXPNAME}-logs.tar $WDIR/postprocessing_logs 
 		if [ "${machine}" = "gadi.nci.org.au" ] ; then
 			# submitted as a separate job
-			netcp -C -N mdss-logs -l other=mdss,storage=gdata/v14+scratch/ux06,mem=4Gb ${SAVE_EXP_DIR}/${EXPNAME}-logs.tar ${TAPE_DIR}/
+			netcp -P v14 -C -N mdss-logs -l other=mdss,storage=gdata/v14+scratch/ux06,mem=4Gb ${SAVE_EXP_DIR}/${EXPNAME}-logs.tar ${TAPE_DIR}/
 		fi
 		touch ${POSTPROCESSING_LOGDIR}/TAR_logs.done
 		github_message tar_logs success

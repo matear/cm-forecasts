@@ -210,6 +210,7 @@ echo "Starting model propagation. DATE=" `date`
                 | sed "s|GITHUB_MESSAGE_DIR_INPUT|${GITHUB_MESSAGE_DIR}|"\
                 | sed "s|EXEC|${EXECNAME}|"\
                 | sed "s|ENSSIZE|${ENSSIZE}|"\
+                | sed "s|FIRST_MEMBER|${FIRST_MEMBER}|"\
                 | sed "s|DT_INPUT|\"${DT}\"|"\
                 | sed "s|WDIR_INPUT|\"${WDIR}\"|"\
                 | sed "s|SAVE_DIR_INPUT|\"${SAVE_DIR}\"|"\

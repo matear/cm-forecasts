@@ -5,7 +5,7 @@ DESCRIPTION='CAFE-60 forecasts'
 
 ENSSIZE=2
 FORECAST_CYCLE_LEN_IN_YEARS=1
-suffix='-test'  # In definition of experiment name
+suffix='-test2'  # In definition of experiment name
 
 #ENSSIZE=96
 #FORECAST_CYCLE_LEN_IN_YEARS=10

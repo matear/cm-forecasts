@@ -14,10 +14,11 @@ suffix='-test2'  # In definition of experiment name
 #FIRST_MEMBER=0  # also launch the forecasts using the ensemble mean as an initial condition
 FIRST_MEMBER=1
 
+this_date=" 1980  5 1"
 #this_date=" 2005  2 1"
 #this_date=" 2005  5 1"
 #this_date=" 2005  8 1"
-this_date=" 2005 11 1"   # in progress
+#this_date=" 2005 11 1"   # in progress
 #this_date=" 2006  2 1"
 #this_date=" 2006  5 1"
 #this_date=" 2006  8 1"
@@ -103,13 +104,13 @@ if [ "${HOSTNAME:0:1}" = "g" ] ; then
 	ZARR_PATH="/g/data/v14/ds0092/software/zarrtools"
 elif [ "${HOSTNAME:0:1}" = "m" ] ||  [ "${HOSTNAME:0:1}" = "n" ] ; then
 	machine='magnus.pawsey.org.au'
-	data_mover="vkitsios@hpc-data.pawsey.org.au"
+	data_mover="dsquire@hpc-data.pawsey.org.au"
 	MOM_SRC_DIR="/group/pawsey0315/vkitsios/2code/mom_cafe/"
-	PROJECT_DIR="/group/pawsey0315/CAFE/forecasts/f5b/WIP"
+	PROJECT_DIR="/group/pawsey0315/CAFE/forecasts/f5/WIP"
 	BASE_DIR="/group/pawsey0315/CAFE/CM21_c5"
 	INITENSDIR_BASE="/group/pawsey0315/CAFE/data_assimilation/d60/save"
 	OUTPUT_DIR=${PROJECT_DIR}
-	SAVE_EXP_DIR=${PROJECT_DIR}
+	SAVE_DIR=${PROJECT_DIR}
 	NP_MASTER=24
 	queue='slurm'
 	MOM_COMMAND="srun -N6 -n 128"
@@ -117,9 +118,9 @@ elif [ "${HOSTNAME:0:1}" = "m" ] ||  [ "${HOSTNAME:0:1}" = "n" ] ; then
 	MOM_BIN_DIR=${MOM_SRC_DIR}"/exec/"${machine}"/CM2M/"
 	dn2date=./src/dn2date/dn2date
 	date2dn=./src/dn2date/date2dn
-	PYTHON="??"
-	POSTPROCESSING_SRCDIR="??"
-	ZARR_PATH="??"
+	PYTHON="/group/pawsey0315/dsquire/miniconda3/envs/zarrify/bin"
+	POSTPROCESSING_SRCDIR="/group/pawsey0315/dsquire/work/active_projects/post-processing"
+	ZARR_PATH="/group/pawsey0315/dsquire/work/software/zarrtools"
 fi
 
 echo "Running on machine "$machine
@@ -131,7 +132,7 @@ SYSTEMNAME=CAFE
 control_name=c5
 data_assimilation_name=d60
 perturbation_name=pX
-forecast_name=f6
+forecast_name=f5
 contact_name="Decadal Activity 1 - Data Assimilation"
 # Note, need to update references with CAFE-60 paper once published.
 references="O'Kane, T.J., Sandery, P.A., Monselesan, D.P., Sakov, P., Chamberlain, M.A., Matear, R.J., Collier, M., Squire, D. and Stevens, L., 2019, 'Coupled data assimilation and ensemble initialisation with application to multi-year ENSO prediction', Journal of Climate."
@@ -149,9 +150,13 @@ RESTART_ENS_MEAN_ARCHIVE_DIR="/OSM/CBR/OA_DCFP/data3/model_output/CAFE/data_assi
 INITENSDIR=$INITENSDIR_BASE"/RESTART_"${JULDAY}
 INITENSDIR_ENS_MEAN=$INITENSDIR_BASE"/RESTART_ENS_MEAN_"${JULDAY}
 if [ ! -d "${INITENSDIR}" ] ; then
+	mkdir ${INITENSDIR}
 	echo ""
-	echo "Run following on pearcey-dm"
-	echo "rsync -vhsrlt --chmod=Dg+s ${RESTART_ENS_MEAN_ARCHIVE_DIR} ${RESTART_ARCHIVE_DIR} ${data_mover}:${INITENSDIR_BASE}"
+	echo "Run following on pearcey-dm:"
+	echo "module load rsync parallel"
+	echo "find ${RESTART_ARCHIVE_DIR}/mem??? -type d > RESTART_${JULDAY}_filelist.txt"
+	echo "time cat RESTART_${JULDAY}_filelist.txt | parallel -j 96 'rsync -ailP --chmod=Dg+s -e "\""ssh -T -c aes128-ctr"\"" {} ${data_mover}:${INITENSDIR}'"
+	#echo "rsync -vhsrlt --chmod=Dg+s ${RESTART_ENS_MEAN_ARCHIVE_DIR} ${RESTART_ARCHIVE_DIR} ${data_mover}:${INITENSDIR_BASE}"
 	echo ""
 	exit
 fi

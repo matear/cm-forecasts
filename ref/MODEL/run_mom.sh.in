@@ -357,17 +357,23 @@ if (( num_complete == ENSSIZE + 1 - FIRST_MEMBER )) ; then
         exclude_realms=( ) # realms not to merge (e.g. if already done)
         all_realms=$(python ${POSTPROCESSING_SRCDIR}/parse_realms.py < "$ZARR_CONFIG_FILE")
         remaining_realms=( `echo ${all_realms[@]} ${realms_as_separate_jobs[@]} ${exclude_realms[@]} | tr ' ' '\n' | sort | uniq -u` )
-        cp -v ${POSTPROCESSING_SRCDIR}/merge_zarr_members.py .
         cp -v ${POSTPROCESSING_SRCDIR}/$CHECK_CONFIG_FILE .
-        cp -v ${POSTPROCESSING_SRCDIR}/tests/test_zarr.py .
         n_merge_jobs=$((${#realms_as_separate_jobs[@]} + 1))
         for realm in ${realms_as_separate_jobs[@]}; do
                 if [ ! -f "${POSTPROCESSING_LOGDIR}/MERGE_${realm}.done" ]; then
-                        qsub -v "paths_to_merge=$(echo ${paths_to_merge[@]}), zarr_path=${ZARR_OUTPUT_PATH}, realms=$realm, n_merge_jobs=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, LOG_DIR=$POSTPROCESSING_LOGDIR" ${POSTPROCESSING_SRCDIR}/run_merge_members_Gadi.sh
-                fi
+                        if [ "${machine}" = "gadi.nci.org.au" ] ; then
+				qsub -v "PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}), ZARR_PATH=${ZARR_OUTPUT_PATH}, REALMS=$realm, N_MERGE_JOBS=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, POSTPROCESSING_SRCDIR=$POSTPROCESSING_SRCDIR, LOG_DIR=$POSTPROCESSING_LOGDIR, PYTHON_PATH=$PYTHON, ZARRTOOLS_PATH=$ZARR_PATH" ${POSTPROCESSING_SRCDIR}/MERGE_Gadi.sh
+                	elif [ "${machine}" = "magnus.pawsey.org.au" ] ; then
+				sbatch --export "PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}), ZARR_PATH=${ZARR_OUTPUT_PATH}, REALMS=$realm, N_MERGE_JOBS=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, POSTPROCESSING_SRCDIR=$POSTPROCESSING_SRCDIR, LOG_DIR=$POSTPROCESSING_LOGDIR, PYTHON_PATH=$PYTHON, ZARRTOOLS_PATH=$ZARR_PATH" ${POSTPROCESSING_SRCDIR}/MERGE_Magnus.sh
+			fi
+		fi
         done
         if [ ! -f "${POSTPROCESSING_LOGDIR}/MERGE_${remaining_realms%% *}.done" ]; then
-                qsub -v "paths_to_merge=$(echo ${paths_to_merge[@]}), zarr_path=${ZARR_OUTPUT_PATH}, realms=$(echo ${remaining_realms[@]}), n_merge_jobs=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, LOG_DIR=$POSTPROCESSING_LOGDIR" ${POSTPROCESSING_SRCDIR}/run_merge_members_Gadi.sh
+                if [ "${machine}" = "gadi.nci.org.au" ] ; then
+			qsub -v "PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}), ZARR_PATH=${ZARR_OUTPUT_PATH}, REALMS=$(echo ${remaining_realms[@]}), N_MERGE_JOBS=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, POSTPROCESSING_SRCDIR=$POSTPROCESSING_SRCDIR, LOG_DIR=$POSTPROCESSING_LOGDIR, PYTHON_PATH=$PYTHON, ZARRTOOLS_PATH=$ZARR_PATH" ${POSTPROCESSING_SRCDIR}/MERGE_Gadi.sh
+		elif [ "${machine}" = "magnus.pawsey.org.au" ] ; then
+			sbatch --export "PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}), ZARR_PATH=${ZARR_OUTPUT_PATH}, REALMS=$(echo ${remaining_realms[@]}), N_MERGE_JOBS=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, POSTPROCESSING_SRCDIR=$POSTPROCESSING_SRCDIR, LOG_DIR=$POSTPROCESSING_LOGDIR, PYTHON_PATH=$PYTHON, ZARRTOOLS_PATH=$ZARR_PATH" ${POSTPROCESSING_SRCDIR}/MERGE_Magnus.sh
+                fi
         fi
 	#-------------------------------------------
 	# NOTE: How can we detect if merge realms failed??

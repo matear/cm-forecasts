@@ -293,11 +293,11 @@ if [ -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
 
 		if [ "${machine}" = "gadi.nci.org.au" ] ; then
                         jobfs_path=${PBS_JOBFS}/ZARR
-                        ${POSTPROCESSING_SRCDIR}/2_zarrify/ZARRIFY_Gadi.sh \
+                        PYTHON_PATH=$PYTHON ZARRTOOLS_PATH=$ZARR_PATH ${POSTPROCESSING_SRCDIR}/2_zarrify/ZARRIFY_Gadi.sh \
                                 $WDIR $ZARR_MEM_PATH "all" $mem $ZARR_CONFIG_FILE $POSTPROCESSING_SRCDIR $jobfs_path \
                                 > ${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.progress 2>&1
                 elif [ "${machine}" = "magnus.pawsey.org.au" ] ; then
-                        ${POSTPROCESSING_SRCDIR}/2_zarrify/ZARRIFY_Magnus.sh \
+                        PYTHON_PATH=$PYTHON ZARRTOOLS_PATH=$ZARR_PATH ${POSTPROCESSING_SRCDIR}/2_zarrify/ZARRIFY_Magnus.sh \
                                 $WDIR $ZARR_MEM_PATH "all" $mem $ZARR_CONFIG_FILE $POSTPROCESSING_SRCDIR \
                                 > ${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.progress 2>&1
                 fi

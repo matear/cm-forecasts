@@ -232,8 +232,15 @@ export PYTHONPATH="${PYTHONPATH}:${ZARR_PATH}"
 if [ -f ${POSTPROCESSING_LOGDIR}/"TAR_${memstr}.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
 		github_message regridding start
-                ${POSTPROCESSING_SRCDIR}/convert_forecast_to_isobaric_Gadi.sh ./
-                touch ${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done
+                if [ "${machine}" = "gadi.nci.org.au" ] ; then
+			${POSTPROCESSING_SRCDIR}/convert_forecast_to_isobaric_Gadi.sh ./
+                elif [ "${machine}" = "magnus.pawsey.org.au" ] ; then
+                        ${POSTPROCESSING_SRCDIR}/convert_forecast_to_isobaric_Magnus.sh ./
+                else
+                        echo "I don't know which script to use to REGRID, terminating"
+                        exit 0
+                fi
+		touch ${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done
 		github_message regridding success
 
 		#-------------------------------------------
@@ -253,7 +260,7 @@ fi
 
 #====================================================================
 # Set up striping of ZARR output directory
-STRIPE_COUNT=60
+STRIPE_COUNT=30
 if [ ! -d $ZARR_OUTPUT_PATH ]; then 
         mkdir $ZARR_OUTPUT_PATH
         lfs setstripe --stripe-count $STRIPE_COUNT --stripe-size 1M $ZARR_OUTPUT_PATH

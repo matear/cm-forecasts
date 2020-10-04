@@ -234,7 +234,7 @@ echo "Starting model propagation. DATE=" `date`
 			if [ "${queue}" = "pbs" ] ; then
 				qsub ${job_script_name}
 			elif [ "${queue}" = "slurm" ] ; then
-				sbatch --qos=high ${job_script_name} 
+				sbatch ${job_script_name} 
 			else
 				echo 'Unsupported queing system'
 				exit

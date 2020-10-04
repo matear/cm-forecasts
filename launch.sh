@@ -45,7 +45,7 @@ cd $WDIR
 if [ "${queue}" = "pbs" ] ; then
 	qsub -N ${this_date_print} ./${RUNSCRIPTNAME}
 elif [ "${queue}" = "slurm" ] ; then
-	sbatch --qos=high -J ${this_date_print} ./${RUNSCRIPTNAME}
+	sbatch -J ${this_date_print} ./${RUNSCRIPTNAME}
 else
 	echo 'Unsupported queing system'
 	exit

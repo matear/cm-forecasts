@@ -354,7 +354,7 @@ num_complete=`ls ${POSTPROCESSING_LOGDIR}/CHECK_*.done | wc -l`
 if (( num_complete == ENSSIZE + 1 - FIRST_MEMBER )) ; then
         paths_to_merge=( `ls -d ${ZARR_OUTPUT_PATH}/mem???` )
         realms_as_separate_jobs=( atmos_daily atmos_isobaric_daily ocean_month ocean_bgc_month ) # all realms not specified here will be lumped into single additional job
-        exclude_realms=( ) # realms not to merge (e.g. if already done)
+        exclude_realms=( ' ' ) # realms not to merge (e.g. if already done)
         all_realms=$(python ${POSTPROCESSING_SRCDIR}/tools/parse_realms.py < "$ZARR_CONFIG_FILE")
         remaining_realms=( `echo ${all_realms[@]} ${realms_as_separate_jobs[@]} ${exclude_realms[@]} | tr ' ' '\n' | sort | uniq -u` )
         cp -v ${POSTPROCESSING_SRCDIR}/$CHECK_CONFIG_FILE .
@@ -362,17 +362,17 @@ if (( num_complete == ENSSIZE + 1 - FIRST_MEMBER )) ; then
         for realm in ${realms_as_separate_jobs[@]}; do
                 if [ ! -f "${POSTPROCESSING_LOGDIR}/MERGE_${realm}.done" ]; then
                         if [ "${machine}" = "gadi.nci.org.au" ] ; then
-				qsub -v "PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}), ZARR_PATH=${ZARR_OUTPUT_PATH}, REALMS=$realm, N_MERGE_JOBS=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, POSTPROCESSING_SRCDIR=$POSTPROCESSING_SRCDIR, LOG_DIR=$POSTPROCESSING_LOGDIR, PYTHON_PATH=$PYTHON, ZARRTOOLS_PATH=$ZARR_PATH" ${POSTPROCESSING_SRCDIR}/MERGE_Gadi.sh
+				qsub -v "PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}), ZARR_PATH=${ZARR_OUTPUT_PATH}, REALMS=$realm, N_MERGE_JOBS=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, POSTPROCESSING_SRCDIR=$POSTPROCESSING_SRCDIR, LOG_DIR=$POSTPROCESSING_LOGDIR, PYTHON_PATH=$PYTHON, ZARRTOOLS_PATH=$ZARR_PATH" ${POSTPROCESSING_SRCDIR}/2_zarrify/MERGE_Gadi.sh
                 	elif [ "${machine}" = "magnus.pawsey.org.au" ] ; then
-				sbatch --export "PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}), ZARR_PATH=${ZARR_OUTPUT_PATH}, REALMS=$realm, N_MERGE_JOBS=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, POSTPROCESSING_SRCDIR=$POSTPROCESSING_SRCDIR, LOG_DIR=$POSTPROCESSING_LOGDIR, PYTHON_PATH=$PYTHON, ZARRTOOLS_PATH=$ZARR_PATH" ${POSTPROCESSING_SRCDIR}/MERGE_Magnus.sh
+				sbatch --export="PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}),ZARR_PATH=${ZARR_OUTPUT_PATH},REALMS=$realm,N_MERGE_JOBS=$n_merge_jobs,ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE,CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE,POSTPROCESSING_SRCDIR=$POSTPROCESSING_SRCDIR,LOG_DIR=$POSTPROCESSING_LOGDIR,PYTHON_PATH=$PYTHON,ZARRTOOLS_PATH=$ZARR_PATH" ${POSTPROCESSING_SRCDIR}/2_zarrify/MERGE_Magnus.sh
 			fi
 		fi
         done
         if [ ! -f "${POSTPROCESSING_LOGDIR}/MERGE_${remaining_realms%% *}.done" ]; then
                 if [ "${machine}" = "gadi.nci.org.au" ] ; then
-			qsub -v "PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}), ZARR_PATH=${ZARR_OUTPUT_PATH}, REALMS=$(echo ${remaining_realms[@]}), N_MERGE_JOBS=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, POSTPROCESSING_SRCDIR=$POSTPROCESSING_SRCDIR, LOG_DIR=$POSTPROCESSING_LOGDIR, PYTHON_PATH=$PYTHON, ZARRTOOLS_PATH=$ZARR_PATH" ${POSTPROCESSING_SRCDIR}/MERGE_Gadi.sh
+			qsub -v "PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}), ZARR_PATH=${ZARR_OUTPUT_PATH}, REALMS=$(echo ${remaining_realms[@]}), N_MERGE_JOBS=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, POSTPROCESSING_SRCDIR=$POSTPROCESSING_SRCDIR, LOG_DIR=$POSTPROCESSING_LOGDIR, PYTHON_PATH=$PYTHON, ZARRTOOLS_PATH=$ZARR_PATH" ${POSTPROCESSING_SRCDIR}/2_zarrify/MERGE_Gadi.sh
 		elif [ "${machine}" = "magnus.pawsey.org.au" ] ; then
-			sbatch --export "PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}), ZARR_PATH=${ZARR_OUTPUT_PATH}, REALMS=$(echo ${remaining_realms[@]}), N_MERGE_JOBS=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, POSTPROCESSING_SRCDIR=$POSTPROCESSING_SRCDIR, LOG_DIR=$POSTPROCESSING_LOGDIR, PYTHON_PATH=$PYTHON, ZARRTOOLS_PATH=$ZARR_PATH" ${POSTPROCESSING_SRCDIR}/MERGE_Magnus.sh
+			sbatch --export="PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}),ZARR_PATH=${ZARR_OUTPUT_PATH},REALMS=$(echo ${remaining_realms[@]}),N_MERGE_JOBS=$n_merge_jobs,ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE,CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE,POSTPROCESSING_SRCDIR=$POSTPROCESSING_SRCDIR,LOG_DIR=$POSTPROCESSING_LOGDIR,PYTHON_PATH=$PYTHON,ZARRTOOLS_PATH=$ZARR_PATH" ${POSTPROCESSING_SRCDIR}/2_zarrify/MERGE_Magnus.sh
                 fi
         fi
 	#-------------------------------------------

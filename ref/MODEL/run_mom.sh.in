@@ -355,7 +355,7 @@ if (( num_complete == ENSSIZE + 1 - FIRST_MEMBER )) ; then
         paths_to_merge=( `ls -d ${ZARR_OUTPUT_PATH}/mem???` )
         realms_as_separate_jobs=( atmos_daily atmos_isobaric_daily ocean_month ocean_bgc_month ) # all realms not specified here will be lumped into single additional job
         exclude_realms=( ) # realms not to merge (e.g. if already done)
-        all_realms=$(python ${POSTPROCESSING_SRCDIR}/parse_realms.py < "$ZARR_CONFIG_FILE")
+        all_realms=$(python ${POSTPROCESSING_SRCDIR}/tools/parse_realms.py < "$ZARR_CONFIG_FILE")
         remaining_realms=( `echo ${all_realms[@]} ${realms_as_separate_jobs[@]} ${exclude_realms[@]} | tr ' ' '\n' | sort | uniq -u` )
         cp -v ${POSTPROCESSING_SRCDIR}/$CHECK_CONFIG_FILE .
         n_merge_jobs=$((${#realms_as_separate_jobs[@]} + 1))

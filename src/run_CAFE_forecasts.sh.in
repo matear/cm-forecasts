@@ -26,7 +26,7 @@ github_message(){
         status=$2
 
         # Execute
-        python $POSTPROCESSING_SRCDIR/message.py \
+        python $POSTPROCESSING_SRCDIR/messaging/message.py \
         $GITHUB_MESSAGE_DIR \
         $EXPNAME/$memstr \
         $WDIR \

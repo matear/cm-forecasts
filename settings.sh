@@ -5,6 +5,7 @@ DESCRIPTION='CAFE-60 forecasts'
 
 ENSSIZE=10
 FORECAST_CYCLE_LEN_IN_YEARS=10
+PER_RUN_FORECAST_CYCLE_LEN_IN_YEARS=5 # for when walltime limit is insufficient to run all forecast years (Gadi can run 10 years @ DT=1800 in 48 hour limit, Magnus can run 5 years @ DT=1800 in 24 hour limit)
 suffix=''  # In definition of experiment name
 
 #ENSSIZE=96

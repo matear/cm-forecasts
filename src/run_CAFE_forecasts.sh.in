@@ -44,6 +44,7 @@ echo "Reading input parameters, setting dates and save directories. Date= "`date
 	export PYTHONPATH="${PYTHONPATH}:${ZARR_PATH}"
 
 	(( FORECAST_CYCLE_LEN_IN_MONTHS = FORECAST_CYCLE_LEN_IN_YEARS * 12 ))
+	(( PER_RUN_FORECAST_CYCLE_LEN_IN_MONTHS = PER_RUN_FORECAST_CYCLE_LEN_IN_YEARS * 12 ))
 
 	MOMINPUT_DIR=${WDIR}/MOM/INPUT
 	POSTPROCESSING_LOGDIR=${WDIR}/postprocessing_logs
@@ -227,8 +228,9 @@ echo "Starting model propagation. DATE=" `date`
 			JOBNAME="${this_date_print}-${numstr}"
 			job_script_name="run_mom.${numstr}.sh"
 			cat ${WDIR}/run_mom.sh \
-			| sed "s|MEM1_INPUT|\"${mem}\"|"\
+				| sed "s|MEM1_INPUT|\"${mem}\"|"\
 				| sed "s|MONTHS_INPUT|${FORECAST_CYCLE_LEN_IN_MONTHS}|"\
+				| sed "s|MONTHS_PER_RUN_INPUT|${PER_RUN_FORECAST_CYCLE_LEN_IN_MONTHS}|"\
 			       	| sed "s|JOBNAME_INPUT|${JOBNAME}|"\
 			       	> ${WDIR}/${job_script_name}
 			if [ "${queue}" = "pbs" ] ; then

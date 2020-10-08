@@ -87,7 +87,7 @@ JULBASE="1800 1 1"
 echo ${HOSTNAME}
 if [ "${HOSTNAME:0:1}" = "g" ] ; then
         machine='gadi.nci.org.au'
-        data_mover="vxk563@gadi-dm.nci.org.au"
+        data_mover="${USER}@gadi-dm.nci.org.au"
         MOM_SRC_DIR="/home/548/pas548/src/mom_cafe"
         OUTPUT_DIR="/scratch/ux06/vxk563/CAFE/forecasts/f6/WIP/"
         SAVE_DIR="/g/data/v14/vxk563/CAFE/forecasts/f6/WIP/"
@@ -105,7 +105,7 @@ if [ "${HOSTNAME:0:1}" = "g" ] ; then
 	ZARR_PATH="/g/data/v14/ds0092/software/zarrtools"
 elif [ "${HOSTNAME:0:1}" = "m" ] ||  [ "${HOSTNAME:0:1}" = "n" ] ; then
 	machine='magnus.pawsey.org.au'
-	data_mover="dsquire@hpc-data.pawsey.org.au"
+	data_mover="${USER}@hpc-data.pawsey.org.au"
 	MOM_SRC_DIR="/group/pawsey0315/vkitsios/2code/mom_cafe/"
 	PROJECT_DIR="/group/pawsey0315/CAFE/forecasts/f5/WIP"
 	BASE_DIR="/group/pawsey0315/CAFE/CM21_c5"
@@ -155,6 +155,7 @@ if [ ! -d "${INITENSDIR}" ] ; then
 	echo ""
 	echo "Run following on pearcey-dm:"
 	echo "module load rsync parallel"
+	echo "rsync -vhsrlt --chmod=Dg+s ${RESTART_ENS_MEAN_ARCHIVE_DIR} ${data_mover}:${INITENSDIR_BASE}"
 	echo "find ${RESTART_ARCHIVE_DIR}/mem??? -type d > RESTART_${JULDAY}_filelist.txt"
 	echo "time cat RESTART_${JULDAY}_filelist.txt | parallel -j 96 'rsync -ailP --chmod=Dg+s -e "\""ssh -T -c aes128-ctr"\"" {} ${data_mover}:${INITENSDIR}'"
 	#echo "rsync -vhsrlt --chmod=Dg+s ${RESTART_ENS_MEAN_ARCHIVE_DIR} ${RESTART_ARCHIVE_DIR} ${data_mover}:${INITENSDIR_BASE}"

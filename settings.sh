@@ -158,6 +158,7 @@ if [ ! -d "${INITENSDIR}" ] ; then
 	echo "rsync -vhsrlt --chmod=Dg+s ${RESTART_ENS_MEAN_ARCHIVE_DIR} ${data_mover}:${INITENSDIR_BASE}"
 	echo "find ${RESTART_ARCHIVE_DIR}/mem??? -type d > RESTART_${JULDAY}_filelist.txt"
 	echo "time cat RESTART_${JULDAY}_filelist.txt | parallel -j 96 'rsync -ailP --chmod=Dg+s -e "\""ssh -T -c aes128-ctr"\"" {} ${data_mover}:${INITENSDIR}'"
+	echo "rm RESTART_${JULDAY}_filelist.txt"
 	#echo "rsync -vhsrlt --chmod=Dg+s ${RESTART_ENS_MEAN_ARCHIVE_DIR} ${RESTART_ARCHIVE_DIR} ${data_mover}:${INITENSDIR_BASE}"
 	echo ""
 	exit

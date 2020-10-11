@@ -156,10 +156,10 @@ if [ ! -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
 				mv mom-${DT}.out mom-${DT}.out.${MONTHS_DONE}_months_done
 				#--------------------------------------
 				# Once confident code does not require user intervention, uncomment the following line to autmatically relaunch this script.
-				#cd ${WDIR}
-				#qsub $0
+				cd ${WDIR}
+				qsub $0
+				#exit
 				#--------------------------------------
-				exit
 			fi
 		fi
 	else

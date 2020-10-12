@@ -386,29 +386,29 @@ if (( num_complete == ENSSIZE + 1 - FIRST_MEMBER )) ; then
 	# NOTE: How can we detect if merge realms failed??
 	#-------------------------------------------
 
-        if [ ! -f "${POSTPROCESSING_LOGDIR}/TAR_logs.done" ]; then
-                github_message tar_logs start
-		to_tar=$WDIR/postprocessing_logs
-                tar_name=${SAVE_EXP_DIR}/${EXPNAME}-logs.tar
-                tar -cvf ${tar_name} ${to_tar}
-		if [ "${machine}" = "gadi.nci.org.au" ] ; then
-                        # submitted as a separate job
-                        netcp -P v14 -C -N mdss-logs -l other=mdss,storage=gdata/v14+scratch/ux06,mem=4Gb ${SAVE_EXP_DIR}/${EXPNAME}-logs.tar ${TAPE_DIR}/
-                fi
-
-                # Check the size of the tar file
-                size_to_tar=$(du -sc --apparent-size "$to_tar" | tail -1 | cut -f 1)
-                size_tar=$(du -sc --apparent-size "$tar_name" | tail -1 | cut -f 1)
-                if [ "$size_tar" -ge "$size_to_tar" ]; then
-                        touch ${POSTPROCESSING_LOGDIR}/TAR_logs.done
-                	github_message tar_logs success
-		else
-                        touch ${POSTPROCESSING_LOGDIR}/TAR_logs.failed
-                        github_message tar_logs fail
-			echo "Size of tar file of logs does not match size of input files, terminating"
-                        exit 0
-                fi
-	fi
+        #if [ ! -f "${POSTPROCESSING_LOGDIR}/TAR_logs.done" ]; then
+        #        github_message tar_logs start
+#		to_tar=$WDIR/postprocessing_logs
+#                tar_name=${SAVE_EXP_DIR}/${EXPNAME}-logs.tar
+#                tar -cvf ${tar_name} ${to_tar}
+#		if [ "${machine}" = "gadi.nci.org.au" ] ; then
+#                        # submitted as a separate job
+#                        netcp -P v14 -C -N mdss-logs -l other=mdss,storage=gdata/v14+scratch/ux06,mem=4Gb ${SAVE_EXP_DIR}/${EXPNAME}-logs.tar ${TAPE_DIR}/
+#                fi
+#
+#                # Check the size of the tar file
+#                size_to_tar=$(du -sc --apparent-size "$to_tar" | tail -1 | cut -f 1)
+#                size_tar=$(du -sc --apparent-size "$tar_name" | tail -1 | cut -f 1)
+#                if [ "$size_tar" -ge "$size_to_tar" ]; then
+#                        touch ${POSTPROCESSING_LOGDIR}/TAR_logs.done
+#                	github_message tar_logs success
+#		else
+#                        touch ${POSTPROCESSING_LOGDIR}/TAR_logs.failed
+#                        github_message tar_logs fail
+#			echo "Size of tar file of logs does not match size of input files, terminating"
+#                        exit 0
+#                fi
+#	fi
 
         #-------------------------------------------
         # NOTE: How can we detect if tarring or tape archived failed?

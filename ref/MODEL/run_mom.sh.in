@@ -157,7 +157,11 @@ if [ ! -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
 				#--------------------------------------
 				# Once confident code does not require user intervention, uncomment the following line to autmatically relaunch this script.
 				cd ${WDIR}
-				qsub $0
+				if [ "${machine}" = "gadi.nci.org.au" ] ; then
+					qsub $0
+				elif [ "${machine}" = "magnus.pawsey.org.au" ] ; then
+					sbatch $0
+				fi
 				#exit
 				#--------------------------------------
 			fi

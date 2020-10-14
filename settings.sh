@@ -15,7 +15,7 @@ suffix=''  # In definition of experiment name
 #FIRST_MEMBER=0  # also launch the forecasts using the ensemble mean as an initial condition
 FIRST_MEMBER=1
 
-this_date=" 1982  5 1"
+this_date=" 1985  5 1"
 #this_date=" 2005  2 1"
 #this_date=" 2005  5 1"
 #this_date=" 2005  8 1"

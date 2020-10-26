@@ -15,6 +15,6 @@ Installation instructions
 
 3) Run from the base directory using
 
-	./launch
+	`./launch`
 
 

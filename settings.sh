@@ -3,82 +3,48 @@
 #=======================================================================
 DESCRIPTION='CAFE-60 forecasts'
 
-ENSSIZE=10
+ENSSIZE=96
 FORECAST_CYCLE_LEN_IN_MONTHS=120
-PER_RUN_FORECAST_CYCLE_LEN_IN_MONTHS=68 # for when walltime limit is insufficient to run all forecast month (Gadi can run 10 years @ DT=1800 in 48 hour limit, Magnus can run 5 years @ DT=1800 in 24 hour limit)
+PER_RUN_FORECAST_CYCLE_LEN_IN_MONTHS=120 # for when walltime limit is insufficient to run all forecast month (Gadi can run 10 years @ DT=1800 in 48 hour limit, Magnus can run 5 years @ DT=1800 in 24 hour limit)
 suffix=''  # In definition of experiment name
-
-#ENSSIZE=96
-#FORECAST_CYCLE_LEN_IN_MONTHS=120
-#suffix=''
 
 #FIRST_MEMBER=0  # also launch the forecasts using the ensemble mean as an initial condition
 FIRST_MEMBER=1
 
-this_date=" 1985  5 1"
-#this_date=" 2005  2 1"
+ZARR_CONFIG_FILE=zarr_specs_CAFE-f6.json
+CHECK_CONFIG_FILE=check_specs_CAFE-f6.json
+
 #this_date=" 2005  5 1"
-#this_date=" 2005  8 1"
-#this_date=" 2005 11 1"   # in progress
-#this_date=" 2006  2 1"
+#this_date=" 2005 11 1"  # complete
 #this_date=" 2006  5 1"
-#this_date=" 2006  8 1"
-#this_date=" 2006 11 1"   # complete
-#this_date=" 2007  2 1"
+#this_date=" 2006 11 1"  # complete
 #this_date=" 2007  5 1"
-#this_date=" 2007  8 1"
-#this_date=" 2007 11 1"   # complete
-#this_date=" 2008  2 1"
+#this_date=" 2007 11 1"  # complete
 #this_date=" 2008  5 1"
-#this_date=" 2008  8 1"
-#this_date=" 2008 11 1"   # complete
-#this_date=" 2009  2 1"
+#this_date=" 2008 11 1"  # complete
 #this_date=" 2009  5 1"
-#this_date=" 2009  8 1"
 #this_date=" 2009 11 1"  # complete
-#this_date=" 2010  2 1"
-#this_date=" 2010  5 1"
-#this_date=" 2010  8 1"
+this_date=" 2010  5 1"
 #this_date=" 2010 11 1"  # complete
-#this_date=" 2011  2 1"
 #this_date=" 2011  5 1"
-#this_date=" 2011  8 1"
 #this_date=" 2011 11 1"  # complete
-#this_date=" 2012  2 1"
 #this_date=" 2012  5 1"
-#this_date=" 2012  8 1"
 #this_date=" 2012 11 1"  # complete
-#this_date=" 2013  2 1"
-#this_date=" 2013  5 1"
-#this_date=" 2013  8 1"
+#this_date=" 2013  5 1"  # complete
 #this_date=" 2013 11 1"  # complete
-#this_date=" 2014  2 1"
-#this_date=" 2014  5 1"
-#this_date=" 2014  8 1"
+#this_date=" 2014  5 1"  # complete
 #this_date=" 2014 11 1"  # complete
-#this_date=" 2015  2 1"
 #this_date=" 2015  5 1"
-#this_date=" 2015  8 1"
 #this_date=" 2015 11 1"  # complete
-#this_date=" 2016  2 1"
-this_date=" 2016  5 1"
-#this_date=" 2016  8 1"
+#this_date=" 2016  5 1"  # complete
 #this_date=" 2016 11 1"  # complete
-#this_date=" 2017  2 1"
-#this_date=" 2017  5 1"
-#this_date=" 2017  8 1"
+#this_date=" 2017  5 1"  # complete
 #this_date=" 2017 11 1"  # complete
-#this_date=" 2018  2 1"
-#this_date=" 2018  5 1"
-#this_date=" 2018  8 1"
+#this_date=" 2018  5 1"  # complete
 #this_date=" 2018 11 1"  # complete
-#this_date=" 2019  2 1"
 #this_date=" 2019  5 1"
-#this_date=" 2019  8 1"
 #this_date=" 2019 11 1" 
-#this_date=" 2020  2 1"
 #this_date=" 2020  5 1"
-#this_date=" 2020  8 1"
 #this_date=" 2020 11 1" 
 JULBASE="1800 1 1"
 
@@ -133,7 +99,7 @@ SYSTEMNAME=CAFE
 control_name=c5
 data_assimilation_name=d60
 perturbation_name=pX
-forecast_name=f5
+forecast_name=f6
 contact_name="Decadal Activity 1 - Data Assimilation"
 # Note, need to update references with CAFE-60 paper once published.
 references="O'Kane, T.J., Sandery, P.A., Monselesan, D.P., Sakov, P., Chamberlain, M.A., Matear, R.J., Collier, M., Squire, D. and Stevens, L., 2019, 'Coupled data assimilation and ensemble initialisation with application to multi-year ENSO prediction', Journal of Climate."

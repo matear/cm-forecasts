@@ -208,7 +208,9 @@ echo "Starting model propagation. DATE=" `date`
                 | sed "s|ZARR_PATH_INPUT|${ZARR_PATH}|"\
                 | sed "s|POSTPROCESSING_SRCDIR_INPUT|${POSTPROCESSING_SRCDIR}|"\
                 | sed "s|POSTPROCESSING_LOGDIR_INPUT|${POSTPROCESSING_LOGDIR}|"\
-                | sed "s|GITHUB_MESSAGE_DIR_INPUT|${GITHUB_MESSAGE_DIR}|"\
+                | sed "s|ZARR_CONFIG_FILE_INPUT|${ZARR_CONFIG_FILE}|"\
+		| sed "s|CHECK_CONFIG_FILE_INPUT|${CHECK_CONFIG_FILE}|"\
+		| sed "s|GITHUB_MESSAGE_DIR_INPUT|${GITHUB_MESSAGE_DIR}|"\
                 | sed "s|EXEC|${EXECNAME}|"\
                 | sed "s|ENSSIZE|${ENSSIZE}|"\
                 | sed "s|FIRST_MEMBER|${FIRST_MEMBER}|"\

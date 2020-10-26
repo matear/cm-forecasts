@@ -26,7 +26,7 @@ github_message(){
         status=$2
 
         # Execute
-        python $POSTPROCESSING_SRCDIR/message.py \
+        python $POSTPROCESSING_SRCDIR/messaging/message.py \
         $GITHUB_MESSAGE_DIR \
         $EXPNAME/$memstr \
         $WDIR \
@@ -43,7 +43,8 @@ echo "Reading input parameters, setting dates and save directories. Date= "`date
 	export PATH="${PYTHON}:${PYTHON}/bin:${PATH}"
 	export PYTHONPATH="${PYTHONPATH}:${ZARR_PATH}"
 
-	(( FORECAST_CYCLE_LEN_IN_MONTHS = FORECAST_CYCLE_LEN_IN_YEARS * 12 ))
+	# (( FORECAST_CYCLE_LEN_IN_MONTHS = FORECAST_CYCLE_LEN_IN_YEARS * 12 ))
+	# (( PER_RUN_FORECAST_CYCLE_LEN_IN_MONTHS = PER_RUN_FORECAST_CYCLE_LEN_IN_YEARS * 12 ))
 
 	MOMINPUT_DIR=${WDIR}/MOM/INPUT
 	POSTPROCESSING_LOGDIR=${WDIR}/postprocessing_logs
@@ -227,9 +228,10 @@ echo "Starting model propagation. DATE=" `date`
 			JOBNAME="${this_date_print}-${numstr}"
 			job_script_name="run_mom.${numstr}.sh"
 			cat ${WDIR}/run_mom.sh \
-			| sed "s|MEM1_INPUT|\"${mem}\"|"\
+				| sed "s|MEM1_INPUT|\"${mem}\"|"\
 				| sed "s|MONTHS_INPUT|${FORECAST_CYCLE_LEN_IN_MONTHS}|"\
-			       	| sed "s|JOBNAME_INPUT|\"${JOBNAME}\"|"\
+				| sed "s|MONTHS_PER_RUN_INPUT|${PER_RUN_FORECAST_CYCLE_LEN_IN_MONTHS}|"\
+			       	| sed "s|JOBNAME_INPUT|${JOBNAME}|"\
 			       	> ${WDIR}/${job_script_name}
 			if [ "${queue}" = "pbs" ] ; then
 				qsub ${job_script_name}
@@ -247,7 +249,8 @@ echo "Starting model propagation. DATE=" `date`
 #=======================================================================
 	if [ ! -f ${POSTPROCESSING_LOGDIR}/TAR_base.done ] ; then
 		github_message tar_base start
-	        tar -cvf ${SAVE_EXP_DIR}/${EXPNAME}-base.tar $WDIR/*.* $WDIR/MOM $WDIR/ref $WDIR/src 
+	        # Skip slurm.out file for current job
+		tar -cvf ${SAVE_EXP_DIR}/${EXPNAME}-base.tar `ls $WDIR/*.* | grep -v slurm*.out` $WDIR/MOM $WDIR/ref $WDIR/src 
 		if [ "${machine}" = "gadi.nci.org.au" ] ; then
 			# submitted as a separate job
 			netcp -P v14 -C -N mdss-base -l other=mdss,storage=gdata/v14+scratch/ux06,mem=4Gb ${SAVE_EXP_DIR}/${EXPNAME}-base.tar ${TAPE_DIR}/

@@ -3,9 +3,9 @@
 #=======================================================================
 DESCRIPTION='CAFE-60 forecasts'
 
-ENSSIZE=2
-FORECAST_CYCLE_LEN_IN_YEARS=1
-suffix='-test2'  # In definition of experiment name
+ENSSIZE=96
+FORECAST_CYCLE_LEN_IN_YEARS=10
+suffix=''  # In definition of experiment name
 
 #ENSSIZE=96
 #FORECAST_CYCLE_LEN_IN_YEARS=10
@@ -17,7 +17,7 @@ FIRST_MEMBER=1
 #this_date=" 2005  2 1"
 #this_date=" 2005  5 1"
 #this_date=" 2005  8 1"
-this_date=" 2005 11 1"   # in progress
+#this_date=" 2005 11 1"   # in progress
 #this_date=" 2006  2 1"
 #this_date=" 2006  5 1"
 #this_date=" 2006  8 1"
@@ -59,7 +59,7 @@ this_date=" 2005 11 1"   # in progress
 #this_date=" 2015  8 1"
 #this_date=" 2015 11 1"  # complete
 #this_date=" 2016  2 1"
-#this_date=" 2016  5 1"
+this_date=" 2016  5 1"
 #this_date=" 2016  8 1"
 #this_date=" 2016 11 1"  # complete
 #this_date=" 2017  2 1"
@@ -85,9 +85,9 @@ JULBASE="1800 1 1"
 echo ${HOSTNAME}
 if [ "${HOSTNAME:0:1}" = "g" ] ; then
         machine='gadi.nci.org.au'
-        data_mover="vxk563@gadi-dm.nci.org.au"
+        data_mover="${USER}@gadi-dm.nci.org.au"
         MOM_SRC_DIR="/home/548/pas548/src/mom_cafe"
-        OUTPUT_DIR="/scratch/ux06/vxk563/CAFE/forecasts/f6/WIP/"
+        OUTPUT_DIR="/scratch/ux06/ds0092/CAFE/forecasts/f6/WIP/"
         SAVE_DIR="/g/data/v14/vxk563/CAFE/forecasts/f6/WIP/"
         INITENSDIR_BASE="/g/data/v14/vxk563/CAFE/data_assimilation/d60/save"
         BASE_DIR="/g/data/v14/vxk563/CAFE/CM21_c5"
@@ -103,7 +103,7 @@ if [ "${HOSTNAME:0:1}" = "g" ] ; then
 	ZARR_PATH="/g/data/v14/ds0092/software/zarrtools"
 elif [ "${HOSTNAME:0:1}" = "m" ] ||  [ "${HOSTNAME:0:1}" = "n" ] ; then
 	machine='magnus.pawsey.org.au'
-	data_mover="vkitsios@hpc-data.pawsey.org.au"
+	data_mover="${USER}@hpc-data.pawsey.org.au"
 	MOM_SRC_DIR="/group/pawsey0315/vkitsios/2code/mom_cafe/"
 	PROJECT_DIR="/group/pawsey0315/CAFE/forecasts/f5b/WIP"
 	BASE_DIR="/group/pawsey0315/CAFE/CM21_c5"
@@ -151,7 +151,12 @@ INITENSDIR_ENS_MEAN=$INITENSDIR_BASE"/RESTART_ENS_MEAN_"${JULDAY}
 if [ ! -d "${INITENSDIR}" ] ; then
 	echo ""
 	echo "Run following on pearcey-dm"
-	echo "rsync -vhsrlt --chmod=Dg+s ${RESTART_ENS_MEAN_ARCHIVE_DIR} ${RESTART_ARCHIVE_DIR} ${data_mover}:${INITENSDIR_BASE}"
+	echo "module load rsync parallel"
+        echo "rsync -vhsrlt --chmod=Dg+s ${RESTART_ENS_MEAN_ARCHIVE_DIR} ${data_mover}:${INITENSDIR_BASE}"
+        echo "find ${RESTART_ARCHIVE_DIR}/mem??? -type d > RESTART_${JULDAY}_filelist.txt"
+        echo "time cat RESTART_${JULDAY}_filelist.txt | parallel -j 96 'rsync -ailP --chmod=Dg+s -e "\""ssh -T -c aes128-ctr"\"" {} ${data_mover}:${INITENSDIR}'"
+	echo "rm RESTART_${JULDAY}_filelist.txt"
+	#echo "rsync -vhsrlt --chmod=Dg+s ${RESTART_ENS_MEAN_ARCHIVE_DIR} ${RESTART_ARCHIVE_DIR} ${data_mover}:${INITENSDIR_BASE}"
 	echo ""
 	exit
 fi

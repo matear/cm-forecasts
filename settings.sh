@@ -67,7 +67,7 @@ if [ "${HOSTNAME:0:1}" = "g" ] ; then
         dn2date=/home/548/pas548/bin/dn2date
         date2dn=/home/548/pas548/bin/date2dn
 	PYTHON="/g/data/v14/ds0092/software/miniconda3/envs/zarrify/bin"
-	POSTPROCESSING_SRCDIR="/g/data/v14/vxk563/CAFE/forecasts/post-processing"
+	POSTPROCESSING_SRCDIR="/g/data/v14/ds0092/active_projects/post-processing"
 	ZARR_PATH="/g/data/v14/ds0092/software/zarrtools"
 elif [ "${HOSTNAME:0:1}" = "m" ] ||  [ "${HOSTNAME:0:1}" = "n" ] ; then
 	machine='magnus.pawsey.org.au'

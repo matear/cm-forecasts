@@ -27,7 +27,6 @@ DT_orig=DT_INPUT
 PYTHON=PYTHON_INPUT
 POSTPROCESSING_SRCDIR=POSTPROCESSING_SRCDIR_INPUT
 POSTPROCESSING_LOGDIR=POSTPROCESSING_LOGDIR_INPUT
-GITHUB_MESSAGE_DIR=GITHUB_MESSAGE_DIR_INPUT
 ZARR_PATH=ZARR_PATH_INPUT
 ZARR_CONFIG_FILE=ZARR_CONFIG_FILE_INPUT
 
@@ -39,27 +38,8 @@ CHECK_CONFIG_FILE=CHECK_CONFIG_FILE_INPUT
 
 memstr=`printf "mem%03d" $mem`
 
-
-#====================================================================
-# Small wrapper to make messaging simpler
-github_message(){
-
-        # Get user-provided stage and status information
-        stage=$1
-        status=$2
-
-        # Execute
-        python $POSTPROCESSING_SRCDIR/messaging/message.py \
-        $GITHUB_MESSAGE_DIR \
-        $EXPNAME/$memstr \
-        $WDIR \
-        $stage \
-        $status
-
-        # TODO: Provide a -m (message) option for errors?
-}
-
 cd ${WDIR}/$memstr
+cp ${WDIR}/github_message.sh .
 
 #====================================================================
 # Check previous failures have been cleaned up
@@ -119,7 +99,7 @@ if [ ! -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
 	       	> input.nml
 
 	# Launch MOM job
-	github_message forecast start
+	./github_message.sh ${memstr}_forecast start
 	MOM_COMMAND_INPUT ./EXEC  2>&1 | tee mom-${DT}.out
 
 	# Checck for successful completion
@@ -142,17 +122,17 @@ if [ ! -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
 
 		if (( months_orig == months )) ; then
 	                touch ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done
-			github_message forecast success
+			./github_message.sh ${memstr}_forecast success
 		else
 			(( MONTHS_DONE += months ))
         		if (( MONTHS_DONE == months_orig )) ; then
 				rm ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.progress
 	                	touch ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done
-				github_message forecast success
+				./github_message.sh ${memstr}_forecast success
 			else
 				echo ${MONTHS_DONE} > ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.progress
 				echo "mom member $mem in progress and requires user verification and then relaunch, bailing out."
-				github_message forecast progress
+				./github_message.sh ${memstr}_forecast progress
 				mv mom-${DT}.out mom-${DT}.out.${MONTHS_DONE}_months_done
 				#--------------------------------------
 				# Once confident code does not require user intervention, uncomment the following line to autmatically relaunch this script.
@@ -169,7 +149,7 @@ if [ ! -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
 	else
 		echo "mom member $mem failed, bailing out."
 		touch ${POSTPROCESSING_LOGDIR}/MOM_${memstr}.failed
-		github_message forecast fail
+		./github_message.sh ${memstr}_forecast fail
 		exit
 	fi
 fi
@@ -186,11 +166,11 @@ if [ -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
         	./merge.sh
 	        if  stat -t *.nc.* >/dev/null 2>&1 ; then
         	        touch ${POSTPROCESSING_LOGDIR}/NETCDF_COMBINE_${memstr}.failed
-			github_message merge_netcdf start
+			./github_message.sh ${memstr}_merge_netcdf start
                 	exit
 	        else
         	        touch ${POSTPROCESSING_LOGDIR}/NETCDF_COMBINE_${memstr}.done
-			github_message merge_netcdf success
+			./github_message.sh ${memstr}_merge_netcdf success
         	fi
         fi
 fi
@@ -205,7 +185,7 @@ fi
 # Launch Tarring scripts
 if [ -f ${POSTPROCESSING_LOGDIR}/"NETCDF_COMBINE_${memstr}.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/TAR_${memstr}.done" ]; then
-		github_message tar_member start
+		./github_message.sh ${memstr}_tar start
 		to_tar=${WDIR}/${memstr}
 		tar_name=${SAVE_EXP_DIR}/${EXPNAME}-${memstr}.tar
 		tar -cvf ${tar_name} ${to_tar}
@@ -219,10 +199,10 @@ if [ -f ${POSTPROCESSING_LOGDIR}/"NETCDF_COMBINE_${memstr}.done" ]; then
 		size_tar=$(du -sc --apparent-size "$tar_name" | tail -1 | cut -f 1)
 		if [ "$size_tar" -ge "$size_to_tar" ]; then
 			touch ${POSTPROCESSING_LOGDIR}/TAR_${memstr}.done
-			github_message tar_member success
+			./github_message.sh ${memstr}_tar success
 		else
 			touch ${POSTPROCESSING_LOGDIR}/TAR_${memstr}.failed
-			github_message tar_member fail
+			./github_message.sh ${memstr}_tar fail
 			echo "Size of tar file of member directory does not match size of input files, terminating"
     			exit 0
 		fi
@@ -241,23 +221,24 @@ export PATH="${PYTHON}:${PYTHON}/bin:${PATH}"
 export PYTHONPATH="${PYTHONPATH}:${ZARR_PATH}"
 if [ -f ${POSTPROCESSING_LOGDIR}/"TAR_${memstr}.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
-		github_message regridding start
-                if [ "${machine}" = "gadi.nci.org.au" ] ; then
-			${POSTPROCESSING_SRCDIR}/1_regrid/REGRID_Gadi.sh ./
+		./github_message.sh ${memstr}_regrid start
+   		if [ "${machine}" = "gadi.nci.org.au" ] ; then
+                        cp -v ${POSTPROCESSING_SRCDIR}/1_regrid/REGRID_Gadi.sh ./REGRID.sh
                 elif [ "${machine}" = "magnus.pawsey.org.au" ] ; then
-                        ${POSTPROCESSING_SRCDIR}/1_regrid/REGRID_Magnus.sh ./
+                        cp -v ${POSTPROCESSING_SRCDIR}/1_regrid/REGRID_Magnus.sh ./REGRID.sh
                 else
                         echo "I don't know which script to use to REGRID, terminating"
                         exit 0
                 fi
+                ./REGRID.sh ./
 		touch ${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done
-		github_message regridding success
+		./github_message.sh ${memstr}_regrid success
 
 		#-------------------------------------------
 		# NOTE: How can we detect if regrid failed?
 		#-------------------------------------------
 		# When we can, run the following to tell github
-                # github_message regridding fail
+                # ./github_message.sh ${memstr}_regrid fail
 		#-------------------------------------------
         fi
 fi
@@ -297,31 +278,33 @@ fi
 # Launch zarring scripts
 if [ -f "${POSTPROCESSING_LOGDIR}/REGRID_${memstr}.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.done" ]; then
-		github_message zarring start
-
+		./github_message.sh ${memstr}_zarr start
                 cp -v ${POSTPROCESSING_SRCDIR}/$ZARR_CONFIG_FILE .
-
+		cp ${POSTPROCESSING_SRCDIR}/2_zarrify/convert_forecast_to_zarr.py .
 		if [ "${machine}" = "gadi.nci.org.au" ] ; then
-                        jobfs_path=${PBS_JOBFS}/ZARR
-                        PYTHON_PATH=$PYTHON ZARRTOOLS_PATH=$ZARR_PATH ${POSTPROCESSING_SRCDIR}/2_zarrify/ZARRIFY_Gadi.sh \
-                                $WDIR $ZARR_MEM_PATH "all" $mem $ZARR_CONFIG_FILE $POSTPROCESSING_SRCDIR $jobfs_path \
+			cp ${POSTPROCESSING_SRCDIR}/2_zarrify/ZARRIFY_Gadi.sh ./ZARRIFY.sh
+			jobfs_path=${PBS_JOBFS}/ZARR
+			PYTHON_PATH=$PYTHON ZARRTOOLS_PATH=$ZARR_PATH ./ZARRIFY.sh \
+                                $WDIR $ZARR_MEM_PATH "all" $mem $ZARR_CONFIG_FILE $jobfs_path \
                                 > ${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.progress 2>&1
-                elif [ "${machine}" = "magnus.pawsey.org.au" ] ; then
-                        PYTHON_PATH=$PYTHON ZARRTOOLS_PATH=$ZARR_PATH ${POSTPROCESSING_SRCDIR}/2_zarrify/ZARRIFY_Magnus.sh \
-                                $WDIR $ZARR_MEM_PATH "all" $mem $ZARR_CONFIG_FILE $POSTPROCESSING_SRCDIR \
+		elif [ "${machine}" = "magnus.pawsey.org.au" ] ; then
+			cp ${POSTPROCESSING_SRCDIR}/2_zarrify/ZARRIFY_Magnus.sh ./ZARRIFY.sh
+			PYTHON_PATH=$PYTHON ZARRTOOLS_PATH=$ZARR_PATH ./ZARRIFY.sh \
+                                $WDIR $ZARR_MEM_PATH "all" $mem $ZARR_CONFIG_FILE \
                                 > ${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.progress 2>&1
+		else
+                        echo "I don't know which script to use to ZARRIFY, terminating"
+                        exit 0
                 fi
-		
                 chmod 775 $ZARR_MEM_PATH/*.zip
-
 		touch ${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.done
-		github_message zarring success
+		./github_message.sh ${memstr}_zarr success
 
 		#-------------------------------------------
 		# NOTE: How can we detect if ZARR failed?
 		#-------------------------------------------
 		# When we can, runt the following to tell github
-                # github_message zarring fail
+                # ./github_message.sh ${memstr}_zarr fail
 		#-------------------------------------------
         fi
 fi
@@ -336,18 +319,19 @@ fi
 # Launch checking scripts
 if [ -f "${POSTPROCESSING_LOGDIR}/ZARR_${memstr}.done" ]; then
         if [ ! -f "${POSTPROCESSING_LOGDIR}/CHECK_${memstr}.done" ]; then
-		github_message error_checking start
+		./github_message.sh ${memstr}_error_check start
                 cp -v ${POSTPROCESSING_SRCDIR}/$CHECK_CONFIG_FILE .
-                export PP_ZARR_PATH=$ZARR_MEM_PATH
+                cp ${POSTPROCESSING_SRCDIR}/3_check/check_zarr_collections.py .
+		export PP_ZARR_PATH=$ZARR_MEM_PATH
                 export PP_CONFIG_PATH=$CHECK_CONFIG_FILE
-		pytest -v ${POSTPROCESSING_SRCDIR}/3_check/check_zarr_collections.py > ${POSTPROCESSING_LOGDIR}/CHECK_${memstr}.progress 2>&1
+		pytest -v check_zarr_collections.py > ${POSTPROCESSING_LOGDIR}/CHECK_${memstr}.progress 2>&1
                 status=$?
                 if (( "$status" == "0" )); then
                 	touch ${POSTPROCESSING_LOGDIR}/CHECK_${memstr}.done
-			github_message error_checking success
+			./github_message.sh ${memstr}_error_check success
 		else
                 	touch ${POSTPROCESSING_LOGDIR}/CHECK_${memstr}.failed
-			github_message error_checking fail
+			./github_message.sh ${memstr}_error_check fail
                 fi
         fi
 fi
@@ -367,59 +351,51 @@ if (( num_complete == ENSSIZE + 1 - FIRST_MEMBER )) ; then
         exclude_realms=( ' ' ) # realms not to merge (e.g. if already done)
         all_realms=$(python ${POSTPROCESSING_SRCDIR}/tools/parse_realms.py < "$ZARR_CONFIG_FILE")
         remaining_realms=( `echo ${all_realms[@]} ${realms_as_separate_jobs[@]} ${exclude_realms[@]} | tr ' ' '\n' | sort | uniq -u` )
-        cp -v ${POSTPROCESSING_SRCDIR}/$CHECK_CONFIG_FILE .
         n_merge_jobs=$((${#realms_as_separate_jobs[@]} + 1))
 	TAR_LOG_DIR=${SAVE_EXP_DIR}/${EXPNAME}-logs.tar
+	cp -v ${POSTPROCESSING_SRCDIR}/$CHECK_CONFIG_FILE .
+	cp ${POSTPROCESSING_SRCDIR}/2_zarrify/merge_zarr_members.py .
+	cp ${POSTPROCESSING_SRCDIR}/3_check/check_zarr_collections.py .
+	if [ "${machine}" = "gadi.nci.org.au" ] ; then
+		cp ${POSTPROCESSING_SRCDIR}/2_zarrify/MERGE_Gadi.sh ./MERGE.sh
+	elif [ "${machine}" = "magnus.pawsey.org.au" ] ; then
+		cp ${POSTPROCESSING_SRCDIR}/2_zarrify/MERGE_Magnus.sh ./MERGE.sh
+	else
+		echo "I don't know which script to use to MERGE, terminating"
+		exit 0
+	fi
         for realm in ${realms_as_separate_jobs[@]}; do
                 if [ ! -f "${POSTPROCESSING_LOGDIR}/MERGE_${realm}.done" ]; then
                         if [ "${machine}" = "gadi.nci.org.au" ] ; then
-				qsub -v "PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}), ZARR_PATH=${ZARR_OUTPUT_PATH}, REALMS=$realm, N_MERGE_JOBS=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, POSTPROCESSING_SRCDIR=$POSTPROCESSING_SRCDIR, LOG_DIR=$POSTPROCESSING_LOGDIR, TAR_LOG_DIR=$TAR_LOG_DIR, TAPE_DIR=$TAPE_DIR, PYTHON_PATH=$PYTHON, ZARRTOOLS_PATH=$ZARR_PATH" ${POSTPROCESSING_SRCDIR}/2_zarrify/MERGE_Gadi.sh
-                	elif [ "${machine}" = "magnus.pawsey.org.au" ] ; then
-				sbatch --export="PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}),ZARR_PATH=${ZARR_OUTPUT_PATH},REALMS=$realm,N_MERGE_JOBS=$n_merge_jobs,ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE,CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE,POSTPROCESSING_SRCDIR=$POSTPROCESSING_SRCDIR,LOG_DIR=$POSTPROCESSING_LOGDIR,TAR_LOG_DIR=$TAR_LOG_DIR,PYTHON_PATH=$PYTHON,ZARRTOOLS_PATH=$ZARR_PATH" ${POSTPROCESSING_SRCDIR}/2_zarrify/MERGE_Magnus.sh
-			fi
+				qsub -v "PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}), ZARR_PATH=${ZARR_OUTPUT_PATH}, " \
+					"REALMS=$realm, N_MERGE_JOBS=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, " \
+					"CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, LOG_DIR=$POSTPROCESSING_LOGDIR, " \
+					"TAR_LOG_DIR=$TAR_LOG_DIR, TAPE_DIR=$TAPE_DIR, PYTHON_PATH=$PYTHON, ZARRTOOLS_PATH=$ZARR_PATH" \
+					./MERGE.sh
+			elif [ "${machine}" = "magnus.pawsey.org.au" ] ; then
+				sbatch --export="PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}),ZARR_PATH=${ZARR_OUTPUT_PATH}," \
+					"REALMS=$realm,N_MERGE_JOBS=$n_merge_jobs,ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE," \
+					"CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE,LOG_DIR=$POSTPROCESSING_LOGDIR," \
+					"TAR_LOG_DIR=$TAR_LOG_DIR,PYTHON_PATH=$PYTHON,ZARRTOOLS_PATH=$ZARR_PATH" \
+					./MERGE.sh	
+                	fi
 		fi
         done
         if [ ! -f "${POSTPROCESSING_LOGDIR}/MERGE_${remaining_realms%% *}.done" ]; then
                 if [ "${machine}" = "gadi.nci.org.au" ] ; then
-			qsub -v "PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}), ZARR_PATH=${ZARR_OUTPUT_PATH}, REALMS=$(echo ${remaining_realms[@]}), N_MERGE_JOBS=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, POSTPROCESSING_SRCDIR=$POSTPROCESSING_SRCDIR, LOG_DIR=$POSTPROCESSING_LOGDIR, TAR_LOG_DIR=$TAR_LOG_DIR, TAPE_DIR=$TAPE_DIR, PYTHON_PATH=$PYTHON, ZARRTOOLS_PATH=$ZARR_PATH" ${POSTPROCESSING_SRCDIR}/2_zarrify/MERGE_Gadi.sh
+			qsub -v "PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}), ZARR_PATH=${ZARR_OUTPUT_PATH}, " \
+				"REALMS=$(echo ${remaining_realms[@]}), N_MERGE_JOBS=$n_merge_jobs, ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE, " \
+				"CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE, LOG_DIR=$POSTPROCESSING_LOGDIR, " \
+				"TAR_LOG_DIR=$TAR_LOG_DIR, TAPE_DIR=$TAPE_DIR, PYTHON_PATH=$PYTHON, ZARRTOOLS_PATH=$ZARR_PATH" \
+				./MERGE.sh
 		elif [ "${machine}" = "magnus.pawsey.org.au" ] ; then
-			sbatch --export="PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}),ZARR_PATH=${ZARR_OUTPUT_PATH},REALMS=$(echo ${remaining_realms[@]}),N_MERGE_JOBS=$n_merge_jobs,ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE,CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE,POSTPROCESSING_SRCDIR=$POSTPROCESSING_SRCDIR,LOG_DIR=$POSTPROCESSING_LOGDIR,TAR_LOG_DIR=$TAR_LOG_DIR,PYTHON_PATH=$PYTHON,ZARRTOOLS_PATH=$ZARR_PATH" ${POSTPROCESSING_SRCDIR}/2_zarrify/MERGE_Magnus.sh
+			sbatch --export="PATHS_TO_MERGE=$(echo ${paths_to_merge[@]}),ZARR_PATH=${ZARR_OUTPUT_PATH}," \
+				"REALMS=$(echo ${remaining_realms[@]}),N_MERGE_JOBS=$n_merge_jobs,ZARR_CONFIG_FILE=$ZARR_CONFIG_FILE," \
+				"CHECK_CONFIG_FILE=$CHECK_CONFIG_FILE,LOG_DIR=$POSTPROCESSING_LOGDIR," \
+				"TAR_LOG_DIR=$TAR_LOG_DIR,PYTHON_PATH=$PYTHON,ZARRTOOLS_PATH=$ZARR_PATH" \
+				./MERGE.sh 
                 fi
         fi
-	#-------------------------------------------
-	# NOTE: How can we detect if merge realms failed??
-	#-------------------------------------------
-
-        #if [ ! -f "${POSTPROCESSING_LOGDIR}/TAR_logs.done" ]; then
-        #        github_message tar_logs start
-#		to_tar=$WDIR/postprocessing_logs
-#                tar_name=${SAVE_EXP_DIR}/${EXPNAME}-logs.tar
-#                tar -cvf ${tar_name} ${to_tar}
-#		if [ "${machine}" = "gadi.nci.org.au" ] ; then
-#                        # submitted as a separate job
-#                        netcp -P v14 -C -N mdss-logs -l other=mdss,storage=gdata/v14+scratch/ux06,mem=4Gb ${SAVE_EXP_DIR}/${EXPNAME}-logs.tar ${TAPE_DIR}/
-#                fi
-#
-#                # Check the size of the tar file
-#                size_to_tar=$(du -sc --apparent-size "$to_tar" | tail -1 | cut -f 1)
-#                size_tar=$(du -sc --apparent-size "$tar_name" | tail -1 | cut -f 1)
-#                if [ "$size_tar" -ge "$size_to_tar" ]; then
-#                        touch ${POSTPROCESSING_LOGDIR}/TAR_logs.done
-#                	github_message tar_logs success
-#		else
-#                        touch ${POSTPROCESSING_LOGDIR}/TAR_logs.failed
-#                        github_message tar_logs fail
-#			echo "Size of tar file of logs does not match size of input files, terminating"
-#                        exit 0
-#                fi
-#	fi
-
-        #-------------------------------------------
-        # NOTE: How can we detect if tarring or tape archived failed?
-        #-------------------------------------------
-        # When we can, run the following to tell github
-        # github_message tar_member fail
-        #-------------------------------------------
 fi
 
 #====================================================================

@@ -134,16 +134,13 @@ if [ ! -f "${POSTPROCESSING_LOGDIR}/MOM_${memstr}.done" ]; then
 				echo "mom member $mem in progress and requires user verification and then relaunch, bailing out."
 				./github_message.sh ${memstr}_forecast progress
 				mv mom-${DT}.out mom-${DT}.out.${MONTHS_DONE}_months_done
-				#--------------------------------------
-				# Once confident code does not require user intervention, uncomment the following line to autmatically relaunch this script.
 				cd ${WDIR}
 				if [ "${machine}" = "gadi.nci.org.au" ] ; then
 					qsub $0
 				elif [ "${machine}" = "magnus.pawsey.org.au" ] ; then
 					sbatch $0
 				fi
-				#exit
-				#--------------------------------------
+				exit
 			fi
 		fi
 	else

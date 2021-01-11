@@ -14,13 +14,13 @@ FIRST_MEMBER=1
 ZARR_CONFIG_FILE=zarr_specs_CAFE-f6.json
 CHECK_CONFIG_FILE=check_specs_CAFE-f6.json
 
-#this_date=" 2005  5 1"
+#this_date=" 2005  5 1"  # complete
 #this_date=" 2005 11 1"  # complete
-this_date=" 2006  5 1"
+#this_date=" 2006  5 1"  # complete
 #this_date=" 2006 11 1"  # complete
-#this_date=" 2007  5 1"
+#this_date=" 2007  5 1"  # complete
 #this_date=" 2007 11 1"  # complete
-#this_date=" 2008  5 1"
+#this_date=" 2008  5 1"  # complete
 #this_date=" 2008 11 1"  # complete
 #this_date=" 2009  5 1"  # complete
 #this_date=" 2009 11 1"  # complete
@@ -42,10 +42,10 @@ this_date=" 2006  5 1"
 #this_date=" 2017 11 1"  # complete
 #this_date=" 2018  5 1"  # complete
 #this_date=" 2018 11 1"  # complete
-#this_date=" 2019  5 1"
-#this_date=" 2019 11 1" 
-#this_date=" 2020  5 1"
-#this_date=" 2020 11 1" 
+#this_date=" 2019  5 1"  # complete
+#this_date=" 2019 11 1"  # complete
+#this_date=" 2020  5 1"  # complete
+#this_date=" 2020 11 1"  # complete 
 JULBASE="1800 1 1"
 
 #=======================================================================

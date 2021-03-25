@@ -14,6 +14,36 @@ FIRST_MEMBER=1
 ZARR_CONFIG_FILE=zarr_specs_CAFE-f6.json
 CHECK_CONFIG_FILE=check_specs_CAFE-f6.json
 
+#this_date=" 1990  5 1"
+this_date=" 1990 11 1"
+#this_date=" 1991  5 1"
+#this_date=" 1991 11 1"
+#this_date=" 1992  5 1"
+#this_date=" 1992 11 1"
+#this_date=" 1993  5 1"
+#this_date=" 1993 11 1"
+#this_date=" 1994  5 1"
+#this_date=" 1994 11 1"  # complete
+#this_date=" 1995  5 1"
+#this_date=" 1995 11 1"  # complete
+#this_date=" 1996  5 1"
+#this_date=" 1996 11 1"  # complete
+#this_date=" 1997  5 1"
+#this_date=" 1997 11 1"  # complete
+#this_date=" 1998  5 1"
+#this_date=" 1998 11 1"  # complete
+#this_date=" 1999  5 1"
+#this_date=" 1999 11 1"  # complete
+#this_date=" 2000  5 1"
+#this_date=" 2000 11 1"  # complete
+#this_date=" 2001  5 1"
+#this_date=" 2001 11 1"  # complete
+#this_date=" 2002  5 1"
+#this_date=" 2002 11 1"  # complete
+#this_date=" 2003  5 1"
+#this_date=" 2003 11 1"  # complete
+#this_date=" 2004  5 1"
+#this_date=" 2004 11 1"  # complete
 #this_date=" 2005  5 1"  # complete
 #this_date=" 2005 11 1"  # complete
 #this_date=" 2006  5 1"  # complete
@@ -56,8 +86,8 @@ if [ "${HOSTNAME:0:1}" = "g" ] ; then
         data_mover="${USER}@gadi-dm.nci.org.au"
         MOM_SRC_DIR="/home/548/pas548/src/mom_cafe"
         OUTPUT_DIR="/scratch/ux06/ds0092/CAFE/forecasts/f6/WIP/"
-        SAVE_DIR="/g/data/v14/vxk563/CAFE/forecasts/f6/WIP/"
-        INITENSDIR_BASE="/g/data/v14/vxk563/CAFE/data_assimilation/d60/save"
+        SAVE_DIR="/g/data/xv83/ds0092/CAFE/forecasts/f6/WIP/"
+        INITENSDIR_BASE="/g/data/xv83/ds0092/CAFE/data_assimilation/d60/save"
         BASE_DIR="/g/data/v14/vxk563/CAFE/CM21_c5"
         NP_MASTER=48
         queue='pbs'
@@ -110,7 +140,7 @@ JULDAY=`$date2dn $this_date $JULBASE`
 if (( JULDAY > 73991 )) ; then
 	RESTART_ARCHIVE_DIR="/OSM/CBR/OA_DCFP/data3/model_output/CAFE/data_assimilation/CAFE60/scratch/v14/tok599/cm-runs/CAFE-60/save/RESTART_"${JULDAY}
 else
-	RESTART_ARCHIVE_DIR="/OSM/CBR/OA_DCFP/data5/model_output/CAFE/data_assimilation/CAFE60/short/v14/tok599/cm-runs/CAFE-60/save/RESTART_"${JULDAY}
+	RESTART_ARCHIVE_DIR="/datasets/work/oa-dcfp/reference/data5/model_output/CAFE/data_assimilation/CAFE60/short/v14/tok599/cm-runs/CAFE-60/save/RESTART_"${JULDAY}
 fi
 RESTART_ENS_MEAN_ARCHIVE_DIR="/OSM/CBR/OA_DCFP/data3/model_output/CAFE/data_assimilation/CAFE60/scratch/v14/tok599/cm-runs/CAFE-60/save/RESTART_ENS_MEAN_"${JULDAY}
 
@@ -119,11 +149,15 @@ INITENSDIR_ENS_MEAN=$INITENSDIR_BASE"/RESTART_ENS_MEAN_"${JULDAY}
 if [ ! -d "${INITENSDIR}" ] ; then
 	mkdir ${INITENSDIR}
 	echo ""
-	echo "Run following on pearcey-dm:"
+	echo "Run following as a batch job on pearcey-dm:"
+	echo "#!/bin/bash"
+	echo "#SBATCH --time=01:00:00"
+	echo "#SBATCH --ntasks-per-node=10"
+	echo "#SBATCH --mem=8gb"
 	echo "module load rsync parallel"
 	echo "rsync -vhsrlt --chmod=Dg+s ${RESTART_ENS_MEAN_ARCHIVE_DIR} ${data_mover}:${INITENSDIR_BASE}"
 	echo "find ${RESTART_ARCHIVE_DIR}/mem??? -type d > RESTART_${JULDAY}_filelist.txt"
-	echo "time cat RESTART_${JULDAY}_filelist.txt | parallel -j 96 'rsync -ailP --chmod=Dg+s -e "\""ssh -T -c aes128-ctr"\"" {} ${data_mover}:${INITENSDIR}'"
+	echo "time cat RESTART_${JULDAY}_filelist.txt | parallel -j 10 'rsync -ailP --chmod=Dg+s -e "\""ssh -T -c aes128-ctr"\"" {} ${data_mover}:${INITENSDIR}'"
 	echo "rm RESTART_${JULDAY}_filelist.txt"
 	#echo "rsync -vhsrlt --chmod=Dg+s ${RESTART_ENS_MEAN_ARCHIVE_DIR} ${RESTART_ARCHIVE_DIR} ${data_mover}:${INITENSDIR_BASE}"
 	echo ""

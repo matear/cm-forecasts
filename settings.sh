@@ -14,8 +14,10 @@ FIRST_MEMBER=1
 ZARR_CONFIG_FILE=zarr_specs_CAFE-f6.json
 CHECK_CONFIG_FILE=check_specs_CAFE-f6.json
 
+#this_date=" 1989  5 1"
+this_date=" 1989 11 1"
 #this_date=" 1990  5 1"
-this_date=" 1990 11 1"
+#this_date=" 1990 11 1"
 #this_date=" 1991  5 1"
 #this_date=" 1991 11 1"
 #this_date=" 1992  5 1"
@@ -151,6 +153,7 @@ if [ ! -d "${INITENSDIR}" ] ; then
 	echo ""
 	echo "Run following as a batch job on pearcey-dm:"
 	echo "#!/bin/bash"
+	echo "#SBATCH -p io"
 	echo "#SBATCH --time=01:00:00"
 	echo "#SBATCH --ntasks-per-node=10"
 	echo "#SBATCH --mem=8gb"

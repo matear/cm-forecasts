@@ -188,7 +188,7 @@ if [ -f ${POSTPROCESSING_LOGDIR}/"NETCDF_COMBINE_${memstr}.done" ]; then
 		tar -cvf ${tar_name} ${to_tar}
 		if [ "${machine}" = "gadi.nci.org.au" ] ; then
 			# submitted as a separate job
-			netcp -P v14 -C -N mdss-${memstr} -l other=mdss,storage=gdata/v14+scratch/ux06,mem=4Gb ${SAVE_EXP_DIR}/${EXPNAME}-${memstr}.tar ${TAPE_DIR}/
+			netcp -P v14 -C -N mdss-${memstr} -l other=mdss,storage=gdata/xv83+gdata/v14+scratch/ux06,mem=4Gb ${SAVE_EXP_DIR}/${EXPNAME}-${memstr}.tar ${TAPE_DIR}/
 		fi
 		
 		# Check the size of the tar file

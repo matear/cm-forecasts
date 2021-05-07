@@ -2,7 +2,7 @@
 #
 #PBS -S /bin/bash
 ##PBS -P v14
-#PBS -P ux06
+#PBS -P xv83
 #PBS -q normal
 #PBS -l walltime=4:00:00
 #PBS -l ncpus=48

@@ -114,9 +114,9 @@ if [ "${HOSTNAME:0:1}" = "g" ] ; then
         MOM_BIN_DIR=${MOM_SRC_DIR}"/exec/"${machine}"/CM2M/"
         dn2date=/home/548/pas548/bin/dn2date
         date2dn=/home/548/pas548/bin/date2dn
-	PYTHON="/g/data/v14/ds0092/software/miniconda3/envs/zarrify/bin"
-	POSTPROCESSING_SRCDIR="/g/data/v14/ds0092/active_projects/post-processing"
-	ZARR_PATH="/g/data/v14/ds0092/software/zarrtools"
+	PYTHON="/g/data/xv83/ds0092/software/miniconda3/envs/zarrify/bin"
+	POSTPROCESSING_SRCDIR="/g/data/xv83/ds0092/software/post-processing"
+	ZARR_PATH="/g/data/xv83/ds0092/software/zarrtools"
 elif [ "${HOSTNAME:0:1}" = "m" ] ||  [ "${HOSTNAME:0:1}" = "n" ] ; then
 	machine='magnus.pawsey.org.au'
 	data_mover="${USER}@hpc-data.pawsey.org.au"

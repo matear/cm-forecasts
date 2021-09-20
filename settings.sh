@@ -16,9 +16,9 @@ CHECK_CONFIG_FILE=check_specs_CAFE-f6.json
 
 #this_date=" 1981  5 1"
 #this_date=" 1981 11 1"  # complete
-#this_date=" 1982  5 1"
+this_date=" 1982  5 1"
 #this_date=" 1982 11 1"  # complete
-this_date=" 1983  5 1"
+#this_date=" 1983  5 1"
 #this_date=" 1983 11 1"  # complete
 #this_date=" 1984  5 1"
 #this_date=" 1984 11 1"  # complete
@@ -193,7 +193,9 @@ TAPE_DIR=${forecast_name}/${EXPNAME}
 REF_DIR=${WDIR}"/ref"
 HEADER_MASTER=${REF_DIR}"/header_master."${machine}
 HEADER_MOM=${REF_DIR}"/header_mom."${machine}
-DT="1800"
+DT_ATMOS="1800"
+DT_OCEAN="1800"
+DT_CPLD="1800"
 
 #=======================================================================
 # EOF

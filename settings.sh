@@ -3,18 +3,20 @@
 #=======================================================================
 DESCRIPTION='CAFE-60 forecasts'
 
-ENSSIZE=96
+ENSSIZE=10
 FORECAST_CYCLE_LEN_IN_MONTHS=120
 PER_RUN_FORECAST_CYCLE_LEN_IN_MONTHS=120 # for when walltime limit is insufficient to run all forecast month (Gadi can run 10 years @ DT=1800 in 48 hour limit, Magnus can run 5 years @ DT=1800 in 24 hour limit)
 suffix=''  # In definition of experiment name
 
 #FIRST_MEMBER=0  # also launch the forecasts using the ensemble mean as an initial condition
-FIRST_MEMBER=1
+FIRST_MEMBER=0
 
 ZARR_CONFIG_FILE=zarr_specs_CAFE-f6.json
 CHECK_CONFIG_FILE=check_specs_CAFE-f6.json
 
-this_date=" 1981  5 1"
+this_date=" 1961  11 1"
+#this_date=" 1962  11 1"
+#this_date=" 1981  5 1"
 #this_date=" 1981 11 1"  # complete
 #this_date=" 1982  5 1"
 #this_date=" 1982 11 1"  # complete
